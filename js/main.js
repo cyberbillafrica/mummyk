@@ -1,0 +1,613 @@
+/* ==========================================================================
+ * Mummy K Kiddies Empire — Storefront Logic (js/main.js)
+ * --------------------------------------------------------------------------
+ * Pure frontend: Firebase Firestore (database) + Cloudinary (media uploads).
+ * No backend / no Cloud Functions — security is handled by Firestore Rules
+ * and manual admin verification (see README.md).
+ *
+ * FIRESTORE DATA SCHEMA (used by this app):
+ *   products : { name, price, category, sizes: [], mediaUrl, mediaType, youtubeUrl, createdAt }
+ *   orders   : { orderRef, customerName, customerPhone, customerAddress, items: [],
+ *                subtotal, orderStatus, paymentStatus, paymentMethod, paymentProofUrl, createdAt }
+ *   messages : { name, phone, orderRef, category, message, status, createdAt }
+ *   settings : { whatsappNumber, bankName, accountName, accountNumber, announcement }
+ * ========================================================================== */
+
+import { firebaseConfig, cloudinary, whatsappNumber } from "./config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  doc,
+  serverTimestamp,
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* ==========================================================================
+ * 1. FIREBASE INITIALIZATION
+ * ========================================================================== */
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* ==========================================================================
+ * 2. SMALL HELPERS
+ * ========================================================================== */
+
+/** Format a number as Nigerian Naira, e.g. 2500 → "₦2,500" */
+const formatNaira = (amount) =>
+  "₦" + Number(amount || 0).toLocaleString("en-NG");
+
+/** Show a quick toast message at the bottom of the screen */
+let toastTimer = null;
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.classList.remove("hidden");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.add("hidden"), 3500);
+}
+
+/** Escape user-generated text before inserting into innerHTML (XSS safety) */
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text ?? "";
+  return div.innerHTML;
+}
+
+/** Extract a YouTube video ID from common URL formats */
+function getYouTubeId(url) {
+  if (!url) return null;
+  const match = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/
+  );
+  return match ? match[1] : null;
+}
+
+/** Modal open/close helpers */
+const openModal = (id) => document.getElementById(id).classList.remove("hidden");
+const closeModal = (id) => document.getElementById(id).classList.add("hidden");
+
+/* ==========================================================================
+ * 3. CART (localStorage)
+ * Cart item shape: { id, name, price, size, quantity, mediaUrl, mediaType }
+ * ========================================================================== */
+const CART_KEY = "mummyk_cart";
+
+function loadCart() {
+  try {
+    return JSON.parse(localStorage.getItem(CART_KEY)) || [];
+  } catch {
+    return [];
+  }
+}
+
+function saveCart(cart) {
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  renderCart();
+}
+
+/** Add a product (with chosen size) to the cart */
+function addToCart(product, size) {
+  const cart = loadCart();
+  // Same product + same size → just bump the quantity
+  const existing = cart.find((item) => item.id === product.id && item.size === size);
+  if (existing) {
+    existing.quantity += 1;
+  } else {
+    cart.push({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      size: size || "",
+      quantity: 1,
+      mediaUrl: product.mediaUrl || "",
+      mediaType: product.mediaType || "image",
+    });
+  }
+  saveCart(cart);
+  showToast(`${product.name} added to cart ✅`);
+}
+
+/** Update quantity of a cart item (by index) */
+function updateQuantity(index, delta) {
+  const cart = loadCart();
+  if (!cart[index]) return;
+  cart[index].quantity += delta;
+  if (cart[index].quantity <= 0) cart.splice(index, 1);
+  saveCart(cart);
+}
+
+/** Remove a cart item (by index) */
+function removeItem(index) {
+  const cart = loadCart();
+  cart.splice(index, 1);
+  saveCart(cart);
+}
+
+/** Total items count (for the header badge) */
+const cartCount = () => loadCart().reduce((sum, item) => sum + item.quantity, 0);
+
+/** Total price of the cart */
+const cartTotal = () =>
+  loadCart().reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+/** Re-render the cart drawer + badge */
+function renderCart() {
+  const cart = loadCart();
+  const itemsContainer = document.getElementById("cart-items");
+  const emptyNote = document.getElementById("cart-empty");
+
+  // Header badge
+  document.getElementById("cart-count").textContent = cartCount();
+
+  // Empty state
+  emptyNote.classList.toggle("hidden", cart.length > 0);
+
+  // Items list
+  itemsContainer.innerHTML = cart
+    .map(
+      (item, index) => `
+      <div class="flex gap-3 rounded-2xl border border-ink/10 bg-white p-3">
+        <div class="h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-cream">
+          ${
+            item.mediaType === "video"
+              ? `<video src="${escapeHtml(item.mediaUrl)}" class="h-full w-full object-cover" muted></video>`
+              : `<img src="${escapeHtml(item.mediaUrl)}" alt="${escapeHtml(item.name)}" class="h-full w-full object-cover" />`
+          }
+        </div>
+        <div class="flex flex-1 flex-col">
+          <div class="flex items-start justify-between gap-2">
+            <p class="text-sm font-semibold leading-tight">${escapeHtml(item.name)}</p>
+            <button data-remove="${index}" class="cart-remove text-ink/40 transition hover:text-red-500" aria-label="Remove item">✕</button>
+          </div>
+          ${item.size ? `<p class="mt-0.5 text-xs text-ink/50">Size: ${escapeHtml(item.size)}</p>` : ""}
+          <div class="mt-auto flex items-center justify-between">
+            <div class="flex items-center gap-2 rounded-full border border-ink/10 px-2 py-1">
+              <button data-qty="-1" data-index="${index}" class="qty-btn px-1 text-sm font-bold text-ink/60 hover:text-ink">−</button>
+              <span class="text-xs font-semibold">${item.quantity}</span>
+              <button data-qty="1" data-index="${index}" class="qty-btn px-1 text-sm font-bold text-ink/60 hover:text-ink">+</button>
+            </div>
+            <span class="text-sm font-bold text-ink">${formatNaira(item.price * item.quantity)}</span>
+          </div>
+        </div>
+      </div>`
+    )
+    .join("");
+
+  // Subtotal
+  document.getElementById("cart-subtotal").textContent = formatNaira(cartTotal());
+
+  // Wire up per-item buttons (event delegation on the container)
+  itemsContainer.querySelectorAll(".qty-btn").forEach((btn) =>
+    btn.addEventListener("click", () =>
+      updateQuantity(Number(btn.dataset.index), Number(btn.dataset.qty))
+    )
+  );
+  itemsContainer.querySelectorAll(".cart-remove").forEach((btn) =>
+    btn.addEventListener("click", () => removeItem(Number(btn.dataset.remove)))
+  );
+}
+
+/* ==========================================================================
+ * 4. PRODUCTS — fetch from Firestore & render the grid
+ * ========================================================================== */
+let allProducts = []; // cached so filters don't re-fetch
+let activeCategory = "All";
+
+/** Render the product grid for the selected category */
+function renderProducts() {
+  const grid = document.getElementById("product-grid");
+  const empty = document.getElementById("product-empty");
+
+  const filtered =
+    activeCategory === "All"
+      ? allProducts
+      : allProducts.filter((p) => p.category === activeCategory);
+
+  empty.classList.toggle("hidden", filtered.length > 0);
+
+  grid.innerHTML = filtered
+    .map((product) => {
+      // Media: Cloudinary image or video
+      let mediaHtml = "";
+      if (product.mediaType === "video" && product.mediaUrl) {
+        mediaHtml = `<video src="${escapeHtml(product.mediaUrl)}" controls playsinline
+          class="aspect-square w-full object-cover"></video>`;
+      } else if (product.mediaUrl) {
+        mediaHtml = `<img src="${escapeHtml(product.mediaUrl)}" alt="${escapeHtml(product.name)}"
+          class="aspect-square w-full object-cover" loading="lazy" />`;
+      } else {
+        mediaHtml = `<div class="flex aspect-square w-full items-center justify-center bg-cream text-3xl">🧸</div>`;
+      }
+
+      // Optional YouTube embed
+      const ytId = getYouTubeId(product.youtubeUrl);
+      const youtubeHtml = ytId
+        ? `<div class="mt-3 aspect-video w-full overflow-hidden rounded-xl">
+             <iframe src="https://www.youtube.com/embed/${ytId}" title="${escapeHtml(product.name)} video"
+               class="h-full w-full" frameborder="0"
+               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+               allowfullscreen></iframe>
+           </div>`
+        : "";
+
+      // Size dropdown (only when the product has sizes)
+      const sizesHtml =
+        product.sizes && product.sizes.length
+          ? `<select class="size-select w-full rounded-xl border-2 border-ink/10 bg-white px-3 py-2 text-xs outline-none focus:border-gold">
+              ${product.sizes
+                .map((size) => `<option value="${escapeHtml(size)}">${escapeHtml(size)}</option>`)
+                .join("")}
+            </select>`
+          : "";
+
+      return `
+      <article class="product-card flex flex-col overflow-hidden rounded-2xl border border-ink/10 bg-white shadow-sm transition hover:shadow-lg">
+        <div class="relative overflow-hidden">
+          ${mediaHtml}
+          <span class="absolute left-2 top-2 rounded-full bg-ink/80 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-gold">
+            ${escapeHtml(product.category || "Others")}
+          </span>
+        </div>
+        <div class="flex flex-1 flex-col p-3 sm:p-4">
+          <h3 class="text-sm font-semibold leading-snug text-ink sm:text-base">${escapeHtml(product.name)}</h3>
+          <p class="mt-1 font-display text-lg font-bold text-gold-dark">${formatNaira(product.price)}</p>
+          ${youtubeHtml}
+          <div class="mt-3 space-y-2">
+            ${sizesHtml}
+            <button class="add-to-cart-btn w-full rounded-full bg-ink px-4 py-2.5 text-xs font-bold text-gold transition hover:bg-gold hover:text-ink sm:text-sm">
+              Add to Cart
+            </button>
+          </div>
+        </div>
+      </article>`;
+    })
+    .join("");
+
+  // Wire "Add to Cart" buttons
+  grid.querySelectorAll(".add-to-cart-btn").forEach((btn, index) => {
+    btn.addEventListener("click", () => {
+      const product = filtered[index];
+      const card = btn.closest(".product-card");
+      const sizeSelect = card.querySelector(".size-select");
+      const size = sizeSelect ? sizeSelect.value : "";
+      addToCart(product, size);
+    });
+  });
+}
+
+/** Fetch products from Firestore (sorted newest first) */
+async function fetchProducts() {
+  const loading = document.getElementById("product-loading");
+  try {
+    const snapshot = await getDocs(collection(db, "products"));
+    allProducts = snapshot.docs.map((docSnap) => ({
+      id: docSnap.id,
+      ...docSnap.data(),
+    }));
+    // Sort newest first (createdAt is a Firestore Timestamp)
+    allProducts.sort(
+      (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
+    );
+    loading.classList.add("hidden");
+    renderProducts();
+  } catch (error) {
+    console.error("Failed to load products:", error);
+    loading.innerHTML = `
+      <p class="font-display text-xl font-bold text-ink/70">Could not load products</p>
+      <p class="mt-2 max-w-sm text-sm text-ink/50">
+        Please check the Firebase configuration in js/config.js and your internet connection, then refresh.
+      </p>`;
+  }
+}
+
+/** Category filter buttons */
+function initCategoryFilters() {
+  const buttons = document.querySelectorAll(".category-btn");
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      activeCategory = btn.dataset.category;
+
+      // Update active button styling
+      buttons.forEach((b) => {
+        b.classList.remove("border-ink", "bg-ink", "text-gold");
+        b.classList.add("border-ink/15", "bg-white", "text-ink");
+      });
+      btn.classList.remove("border-ink/15", "bg-white", "text-ink");
+      btn.classList.add("border-ink", "bg-ink", "text-gold");
+
+      renderProducts();
+    });
+  });
+}
+
+/* ==========================================================================
+ * 5. SETTINGS — announcement banner, WhatsApp number, bank details
+ * The settings doc lives at: settings/business
+ * ========================================================================== */
+let businessSettings = {
+  whatsappNumber: "",
+  bankName: "",
+  accountName: "",
+  accountNumber: "",
+  announcement: "",
+};
+
+async function fetchSettings() {
+  try {
+    const snapshot = await getDocs(collection(db, "settings"));
+    if (!snapshot.empty) {
+      businessSettings = { ...businessSettings, ...snapshot.docs[0].data() };
+    }
+  } catch (error) {
+    console.error("Failed to load settings:", error);
+  }
+
+  // Announcement banner
+  const bar = document.getElementById("announcement-bar");
+  if (businessSettings.announcement) {
+    bar.textContent = businessSettings.announcement;
+    bar.classList.remove("hidden");
+  }
+
+  // Bank details in the checkout modal
+  document.getElementById("bank-name-display").textContent =
+    businessSettings.bankName || "—";
+  document.getElementById("account-name-display").textContent =
+    businessSettings.accountName || "—";
+  document.getElementById("account-number-display").textContent =
+    businessSettings.accountNumber || "—";
+}
+
+/* ==========================================================================
+ * 6. CHECKOUT — create order, then WhatsApp or Bank Transfer
+ * ========================================================================== */
+let currentOrder = null; // the Firestore order we just created
+
+/** Generate a unique order reference like MKE-2026-4821 */
+function generateOrderRef() {
+  const year = new Date().getFullYear();
+  const random = Math.floor(1000 + Math.random() * 9000); // 4 digits
+  return `MKE-${year}-${random}`;
+}
+
+/** STEP 1 — save the order to Firestore */
+async function handleCheckoutSubmit(event) {
+  event.preventDefault();
+  const cart = loadCart();
+  if (!cart.length) {
+    showToast("Your cart is empty.");
+    return;
+  }
+
+  const btn = document.getElementById("place-order-btn");
+  btn.disabled = true;
+  btn.textContent = "Placing order…";
+
+  const order = {
+    orderRef: generateOrderRef(),
+    customerName: document.getElementById("customer-name").value.trim(),
+    customerPhone: document.getElementById("customer-phone").value.trim(),
+    customerAddress: document.getElementById("customer-address").value.trim(),
+    items: cart.map(({ id, name, price, size, quantity }) => ({
+      productId: id,
+      name,
+      price,
+      size,
+      quantity,
+    })),
+    subtotal: cartTotal(),
+    orderStatus: "New",
+    paymentStatus: "Unpaid",
+    paymentMethod: "",
+    paymentProofUrl: "",
+    createdAt: serverTimestamp(),
+  };
+
+  try {
+    const docRef = await addDoc(collection(db, "orders"), order);
+    currentOrder = { ...order, id: docRef.id };
+
+    // Move to the payment step
+    document.getElementById("order-ref-display").textContent = order.orderRef;
+    document.getElementById("checkout-step-details").classList.add("hidden");
+    document.getElementById("checkout-step-payment").classList.remove("hidden");
+    showToast(`Order ${order.orderRef} created ✅`);
+  } catch (error) {
+    console.error("Failed to save order:", error);
+    showToast("Could not place order. Please try again.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Place Order";
+  }
+}
+
+/** STEP 2a — WhatsApp order: update paymentMethod & open wa.me */
+async function handleWhatsAppOrder() {
+  if (!currentOrder) return;
+
+  try {
+    await updateDoc(doc(db, "orders", currentOrder.id), { paymentMethod: "WhatsApp" });
+  } catch (error) {
+    console.error("Failed to update payment method:", error);
+  }
+
+  const number = businessSettings.whatsappNumber || whatsappNumber;
+  const lines = currentOrder.items.map(
+    (item) =>
+      `• ${item.name}${item.size ? ` (Size: ${item.size})` : ""} x${item.quantity} = ${formatNaira(
+        item.price * item.quantity
+      )}`
+  );
+
+  const message = [
+    `🛍️ *New Order — Mummy K Kiddies Empire*`,
+    ``,
+    `*Order Ref:* ${currentOrder.orderRef}`,
+    `*Name:* ${currentOrder.customerName}`,
+    `*Phone:* ${currentOrder.customerPhone}`,
+    `*Address:* ${currentOrder.customerAddress}`,
+    ``,
+    `*Items:*`,
+    ...lines,
+    ``,
+    `*Total:* ${formatNaira(currentOrder.subtotal)}`,
+    ``,
+    `I would like to complete this order via WhatsApp. Thank you!`,
+  ].join("\n");
+
+  window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, "_blank");
+  showToast("Opening WhatsApp…");
+}
+
+/** STEP 2b — Bank transfer: show bank details + Cloudinary proof upload */
+function initProofUpload() {
+  document.getElementById("upload-proof-btn").addEventListener("click", () => {
+    if (!window.cloudinary) {
+      showToast("Upload widget is still loading. Please try again.");
+      return;
+    }
+
+    const widget = window.cloudinary.createUploadWidget(
+      {
+        cloudName: cloudinary.cloudName,
+        uploadPreset: cloudinary.uploadPreset,
+        folder: cloudinary.receiptFolder, // mummyk/receipts
+        sources: ["local", "camera"],
+        multiple: false,
+        resourceType: "image",
+        clientAllowedFormats: ["jpg", "jpeg", "png", "webp"],
+        maxFileSize: 5_000_000, // 5 MB
+      },
+      async (error, result) => {
+        if (error) {
+          console.error("Cloudinary upload error:", error);
+          showToast("Upload failed. Please try again.");
+          return;
+        }
+        if (result && result.event === "success") {
+          const proofUrl = result.info.secure_url;
+          try {
+            await updateDoc(doc(db, "orders", currentOrder.id), {
+              paymentMethod: "Bank Transfer",
+              paymentProofUrl: proofUrl,
+              paymentStatus: "Proof Submitted",
+            });
+            const note = document.getElementById("payment-status-note");
+            note.textContent =
+              "✅ Proof of payment uploaded! We will verify and confirm your order shortly.";
+            note.classList.remove("hidden");
+            showToast("Proof of payment submitted ✅");
+          } catch (err) {
+            console.error("Failed to save proof:", err);
+            showToast("Upload succeeded but saving failed. Please contact us.");
+          }
+        }
+      }
+    );
+
+    widget.open();
+  });
+}
+
+/** Also mark the order as Bank Transfer when that option is chosen (before proof) */
+function markBankTransfer() {
+  if (!currentOrder) return;
+  updateDoc(doc(db, "orders", currentOrder.id), { paymentMethod: "Bank Transfer" }).catch(
+    (error) => console.error("Failed to update payment method:", error)
+  );
+}
+
+/** Finish checkout: clear cart & reset the modal for next time */
+function finishCheckout() {
+  saveCart([]); // empties the cart + updates badge
+  currentOrder = null;
+  closeModal("checkout-modal");
+
+  // Reset modal to step 1 for the next order
+  document.getElementById("checkout-step-payment").classList.add("hidden");
+  document.getElementById("checkout-step-details").classList.remove("hidden");
+  document.getElementById("payment-status-note").classList.add("hidden");
+  document.getElementById("checkout-form").reset();
+}
+
+/* ==========================================================================
+ * 7. MESSAGE / COMPLAINT FORM
+ * ========================================================================== */
+async function handleMessageSubmit(event) {
+  event.preventDefault();
+  const btn = document.getElementById("send-message-btn");
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+
+  try {
+    await addDoc(collection(db, "messages"), {
+      name: document.getElementById("msg-name").value.trim(),
+      phone: document.getElementById("msg-phone").value.trim(),
+      orderRef: document.getElementById("msg-order-ref").value.trim(),
+      category: document.getElementById("msg-category").value,
+      message: document.getElementById("msg-message").value.trim(),
+      status: "New",
+      createdAt: serverTimestamp(),
+    });
+    showToast("Message sent! We will get back to you soon ✅");
+    document.getElementById("message-form").reset();
+    closeModal("message-modal");
+  } catch (error) {
+    console.error("Failed to send message:", error);
+    showToast("Could not send message. Please try again.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Send Message";
+  }
+}
+
+/* ==========================================================================
+ * 8. INITIALIZATION — wire up all events
+ * ========================================================================== */
+function init() {
+  // Footer year
+  document.getElementById("footer-year").textContent = new Date().getFullYear();
+
+  // Cart drawer
+  document.getElementById("cart-btn").addEventListener("click", () => openModal("cart-modal"));
+  document.getElementById("close-cart").addEventListener("click", () => closeModal("cart-modal"));
+  document.getElementById("cart-backdrop").addEventListener("click", () => closeModal("cart-modal"));
+
+  // Checkout modal
+  document.getElementById("checkout-btn").addEventListener("click", () => {
+    if (!loadCart().length) {
+      showToast("Your cart is empty.");
+      return;
+    }
+    closeModal("cart-modal");
+    openModal("checkout-modal");
+  });
+  document.getElementById("close-checkout").addEventListener("click", () => closeModal("checkout-modal"));
+  document.getElementById("checkout-backdrop").addEventListener("click", () => closeModal("checkout-modal"));
+  document.getElementById("checkout-form").addEventListener("submit", handleCheckoutSubmit);
+  document.getElementById("done-checkout-btn").addEventListener("click", finishCheckout);
+
+  // Payment options
+  document.getElementById("whatsapp-btn").addEventListener("click", handleWhatsAppOrder);
+  document.getElementById("upload-proof-btn").addEventListener("click", markBankTransfer);
+  initProofUpload();
+
+  // Message modal
+  const openMessage = () => openModal("message-modal");
+  document.getElementById("message-fab").addEventListener("click", openMessage);
+  document.getElementById("footer-message-btn").addEventListener("click", openMessage);
+  document.getElementById("close-message").addEventListener("click", () => closeModal("message-modal"));
+  document.getElementById("message-backdrop").addEventListener("click", () => closeModal("message-modal"));
+  document.getElementById("message-form").addEventListener("submit", handleMessageSubmit);
+
+  // Load data
+  initCategoryFilters();
+  renderCart();
+  fetchProducts();
+  fetchSettings();
+}
+
+init();

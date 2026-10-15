@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Mummy K Kiddies Empire — Admin Dashboard" />
+  <title>Admin Dashboard | Mummy K Kiddies Empire</title>
+
+  <!-- ===== Fonts ===== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- ===== Tailwind CSS (CDN) ===== -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: { DEFAULT: "#D4AF37", dark: "#B8952E", light: "#E8C96A" },
+            cream: "#FDFBF7",
+            ink: "#111111",
+          },
+          fontFamily: {
+            display: ['"Playfair Display"', "serif"],
+            body: ["Inter", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- ===== Cloudinary Upload Widget ===== -->
+  <script src="https://upload-widget.cloudinary.com/global/all.js" async></script>
+
+  <style>
+    body { font-family: "Inter", sans-serif; }
+    .font-display { font-family: "Playfair Display", serif; }
+  </style>
+</head>
+
+<body class="bg-cream text-ink font-body antialiased">
+
+  <!-- ============================ LOGIN SCREEN ============================ -->
+  <section id="login-screen" class="flex min-h-screen items-center justify-center px-4">
+    <div class="w-full max-w-md rounded-2xl border border-ink/10 bg-white p-8 shadow-xl">
+      <div class="text-center">
+        <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-ink text-xl font-bold text-gold">MK</span>
+        <h1 class="mt-4 font-display text-2xl font-bold">Admin Portal</h1>
+        <p class="mt-1 text-sm text-ink/60">Mummy K Kiddies Empire — sign in to manage your store.</p>
+      </div>
+
+      <form id="login-form" class="mt-8 space-y-4">
+        <div>
+          <label for="login-email" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70">Email</label>
+          <input id="login-email" type="email" required placeholder="admin@example.com"
+            class="w-full rounded-xl border-2 border-ink/10 bg-cream px-4 py-3 text-sm outline-none transition focus:border-gold" />
+        </div>
+        <div>
+          <label for="login-password" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70">Password</label>
+          <input id="login-password" type="password" required placeholder="••••••••"
+            class="w-full rounded-xl border-2 border-ink/10 bg-cream px-4 py-3 text-sm outline-none transition focus:border-gold" />
+        </div>
+
+        <p id="login-error" class="hidden rounded-xl bg-red-50 px-4 py-3 text-xs font-semibold text-red-600"></p>
+
+        <button type="submit" id="login-btn"
+          class="w-full rounded-full bg-ink px-6 py-3 text-sm font-bold text-gold transition hover:bg-ink/90 disabled:opacity-50">
+          Sign In
+        </button>
+      </form>
+
+      <a href="index.html" class="mt-6 block text-center text-xs font-semibold text-ink/50 transition hover:text-gold">
+        ← Back to Storefront
+      </a>
+    </div>
+  </section>
+
+  <!-- ============================ DASHBOARD (after login) ============================ -->
+  <section id="dashboard" class="hidden min-h-screen">
+
+    <!-- Top bar -->
+    <header class="sticky top-0 z-40 bg-ink text-cream shadow-lg">
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <a href="index.html" class="flex items-center gap-2">
+          <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gold text-lg font-bold text-ink">MK</span>
+          <span class="leading-tight">
+            <span class="block font-display text-base font-bold text-gold">Mummy K</span>
+            <span class="block text-[10px] uppercase tracking-[0.2em] text-cream/70">Admin Dashboard</span>
+          </span>
+        </a>
+        <div class="flex items-center gap-2">
+          <a href="index.html" class="rounded-full border border-gold/60 px-3 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold hover:text-ink">
+            View Store
+          </a>
+          <button id="logout-btn" class="rounded-full bg-gold px-4 py-1.5 text-xs font-bold text-ink transition hover:bg-gold-light">
+            Logout
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Tabs (horizontal scroll on mobile) -->
+    <nav class="border-b border-ink/10 bg-white">
+      <div class="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-2 sm:px-6" id="tab-bar">
+        <button data-tab="tab-products" class="tab-btn whitespace-nowrap border-b-2 border-gold px-4 py-3 text-sm font-semibold text-ink">
+          Add Products
+        </button>
+        <button data-tab="tab-orders" class="tab-btn whitespace-nowrap border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-ink/60 hover:text-ink">
+          Manage Orders
+        </button>
+        <button data-tab="tab-messages" class="tab-btn whitespace-nowrap border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-ink/60 hover:text-ink">
+          Messages
+        </button>
+        <button data-tab="tab-settings" class="tab-btn whitespace-nowrap border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-ink/60 hover:text-ink">
+          Business Settings
+        </button>
+        <button data-tab="tab-help" class="tab-btn whitespace-nowrap border-b-2 border-transparent px-4 py-3 text-sm font-semibold text-ink/60 hover:text-ink">
+          Help Guide
+        </button>
+      </div>
+    </nav>
+
+    <main class="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+
+      <!-- ==================== TAB: ADD PRODUCTS ==================== -->
+      <div id="tab-products" class="tab-panel">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="font-display text-2xl font-bold">Add Products</h2>
+            <p class="mt-1 text-sm text-ink/60">Fill in the details below. You can add several products at once, then save them all together.</p>
+          </div>
+          <button id="add-product-form-btn" type="button"
+            class="inline-flex items-center justify-center gap-1 rounded-full border-2 border-ink px-5 py-2.5 text-sm font-bold text-ink transition hover:bg-ink hover:text-gold">
+            + Add More Product
+          </button>
+        </div>
+
+        <!-- Dynamic product forms are inserted here -->
+        <div id="product-forms" class="mt-6 space-y-6"></div>
+
+        <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+          <button id="save-products-btn" type="button"
+            class="rounded-full bg-gold px-8 py-3 text-sm font-bold text-ink transition hover:bg-gold-light disabled:opacity-50">
+            💾 Save All Products
+          </button>
+          <button id="clear-products-btn" type="button"
+            class="rounded-full border-2 border-ink/15 px-8 py-3 text-sm font-semibold text-ink transition hover:border-gold">
+            Clear Forms
+          </button>
+        </div>
+      </div>
+
+      <!-- ==================== TAB: MANAGE ORDERS ==================== -->
+      <div id="tab-orders" class="tab-panel hidden">
+        <h2 class="font-display text-2xl font-bold">Manage Orders</h2>
+        <p class="mt-1 text-sm text-ink/60">Verify payment proofs, confirm payments and mark orders as delivered.</p>
+
+        <div class="mt-6 overflow-x-auto rounded-2xl border border-ink/10 bg-white">
+          <table class="w-full min-w-[900px] text-left text-sm">
+            <thead class="bg-ink text-xs uppercase tracking-wide text-gold">
+              <tr>
+                <th class="px-4 py-3">Date</th>
+                <th class="px-4 py-3">Order Ref</th>
+                <th class="px-4 py-3">Customer Info</th>
+                <th class="px-4 py-3">Items</th>
+                <th class="px-4 py-3">Total</th>
+                <th class="px-4 py-3">Payment Proof</th>
+                <th class="px-4 py-3">Payment Status</th>
+                <th class="px-4 py-3">Order Status</th>
+                <th class="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="orders-table-body" class="divide-y divide-ink/5">
+              <tr><td colspan="9" class="px-4 py-8 text-center text-ink/50">Loading orders…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== TAB: MESSAGES ==================== -->
+      <div id="tab-messages" class="tab-panel hidden">
+        <h2 class="font-display text-2xl font-bold">Messages & Complaints</h2>
+        <p class="mt-1 text-sm text-ink/60">Customer messages from the storefront. Tap the status button to move each one along.</p>
+
+        <div class="mt-6 overflow-x-auto rounded-2xl border border-ink/10 bg-white">
+          <table class="w-full min-w-[800px] text-left text-sm">
+            <thead class="bg-ink text-xs uppercase tracking-wide text-gold">
+              <tr>
+                <th class="px-4 py-3">Date</th>
+                <th class="px-4 py-3">Name</th>
+                <th class="px-4 py-3">Phone</th>
+                <th class="px-4 py-3">Message</th>
+                <th class="px-4 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody id="messages-table-body" class="divide-y divide-ink/5">
+              <tr><td colspan="5" class="px-4 py-8 text-center text-ink/50">Loading messages…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== TAB: BUSINESS SETTINGS ==================== -->
+      <div id="tab-settings" class="tab-panel hidden">
+        <h2 class="font-display text-2xl font-bold">Business Settings</h2>
+        <p class="mt-1 text-sm text-ink/60">These details appear on the storefront (announcement, bank details for checkout, WhatsApp number).</p>
+
+        <form id="settings-form" class="mt-6 max-w-2xl space-y-5 rounded-2xl border border-ink/10 bg-white p-6 sm:p-8">
+          <div>
+            <label for="setting-whatsapp" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70">
+              WhatsApp Number (international format, digits only — e.g. 2348012345678)
+            </label>
+            <input id="setting-whatsapp" type="text" placeholder="2348012345678"
+              class="w-full rounded-xl border-2 border-ink/10 bg-cream px-4 py-3 text-sm outline-none transition focus:border-gold" />
+          </div>
+          <div>
+            <label for="setting-bank-name" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70">Bank Name</label>
+            <input id="setting-bank-name" type="text" placeholder="e.g. Guaranty Trust Bank"
+              class="w-full rounded-xl border-2 border-ink/10 bg-cream px-4 py-3 text-sm outline-none transition focus:border-gold" />
+          </div>
+          <div>
+            <label for="setting-account-name" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70">Account Name</label>
+            <input id="setting-account-name" type="text" placeholder="e.g. Mummy K Kiddies Empire"
+              class="w-full rounded-xl border-2 border-ink/10 bg-cream px-4 py-3 text-sm outline-none transition focus:border-gold" />
+          </div>
+          <div>
+            <label for="setting-account-number" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70">Account Number</label>
+            <input id="setting-account-number" type="text" placeholder="e.g. 0123456789"
+              class="w-full rounded-xl border-2 border-ink/10 bg-cream px-4 py-3 text-sm outline-none transition focus:border-gold" />
+          </div>
+          <div>
+            <label for="setting-announcement" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70">Announcement Banner Text</label>
+            <textarea id="setting-announcement" rows="3" placeholder="e.g. 🎉 Free delivery on orders above ₦50,000 this week!"
+              class="w-full rounded-xl border-2 border-ink/10 bg-cream px-4 py-3 text-sm outline-none transition focus:border-gold"></textarea>
+          </div>
+
+          <button type="submit"
+            class="w-full rounded-full bg-gold px-8 py-3 text-sm font-bold text-ink transition hover:bg-gold-light disabled:opacity-50 sm:w-auto">
+            💾 Save Settings
+          </button>
+        </form>
+      </div>
+
+      <!-- ==================== TAB: HELP GUIDE ==================== -->
+      <div id="tab-help" class="tab-panel hidden">
+        <h2 class="font-display text-2xl font-bold">Help Guide</h2>
+        <p class="mt-1 text-sm text-ink/60">A quick manual for running your store from this dashboard.</p>
+
+        <div class="mt-6 max-w-3xl space-y-6">
+
+          <article class="rounded-2xl border border-ink/10 bg-white p-6">
+            <h3 class="font-display text-lg font-bold text-gold-dark">1. Adding Products</h3>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-sm text-ink/70">
+              <li>Open the <strong>Add Products</strong> tab.</li>
+              <li>Fill in the product <strong>Name</strong> and <strong>Price</strong> in Naira (₦).</li>
+              <li>Choose a <strong>Category</strong>: Clothes, Shoes, Bags or Others.</li>
+              <li>Enter <strong>Sizes</strong> separated by commas (e.g. <em>2yrs, 4yrs, 6yrs</em>). Leave blank if the product has no sizes.</li>
+              <li>Optionally paste a <strong>YouTube link</strong> to show a video on the product card.</li>
+              <li>Click <strong>Upload Media</strong> to add product photos or a short video. Files are saved to Cloudinary under <em>mummyk/products</em>.</li>
+              <li>Need more items? Click <strong>+ Add More Product</strong> to get another form.</li>
+              <li>When you are done, click <strong>Save All Products</strong>. All products go live on the storefront at once.</li>
+            </ul>
+          </article>
+
+          <article class="rounded-2xl border border-ink/10 bg-white p-6">
+            <h3 class="font-display text-lg font-bold text-gold-dark">2. Managing Orders</h3>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-sm text-ink/70">
+              <li>Open the <strong>Manage Orders</strong> tab to see every order.</li>
+              <li><strong>Confirm Payment</strong> — click this after you have checked the payment proof and the money has arrived. It changes the payment status to <em>Confirmed</em>.</li>
+              <li><strong>Reject Proof</strong> — click this if the uploaded proof is invalid or unclear. It changes the payment status to <em>Rejected</em>. You can then contact the customer via their phone number.</li>
+              <li><strong>Mark Delivered</strong> — click this once the customer has received their order. It changes the order status to <em>Delivered</em>.</li>
+              <li>Click the link under <strong>Payment Proof</strong> to view the receipt the customer uploaded.</li>
+            </ul>
+          </article>
+
+          <article class="rounded-2xl border border-ink/10 bg-white p-6">
+            <h3 class="font-display text-lg font-bold text-gold-dark">3. Reading Messages</h3>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-sm text-ink/70">
+              <li>Open the <strong>Messages</strong> tab to see customer complaints and enquiries.</li>
+              <li>Each message shows the customer's name, phone number and category (Complaint, Delivery, Payment, Product Enquiry, Other).</li>
+              <li>Click the <strong>status button</strong> to move a message through: <em>New → In Progress → Resolved</em>.</li>
+              <li>Use the phone number to call or WhatsApp the customer back.</li>
+            </ul>
+          </article>
+
+          <article class="rounded-2xl border border-ink/10 bg-white p-6">
+            <h3 class="font-display text-lg font-bold text-gold-dark">4. Business Settings</h3>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-sm text-ink/70">
+              <li><strong>WhatsApp Number</strong> — where customer WhatsApp orders are sent (international format, e.g. 2348012345678).</li>
+              <li><strong>Bank Name / Account Name / Account Number</strong> — shown to customers who choose Bank Transfer at checkout.</li>
+              <li><strong>Announcement Banner Text</strong> — shown in the gold banner on the storefront. Clear it and save to hide the banner.</li>
+            </ul>
+          </article>
+
+          <article class="rounded-2xl border border-gold bg-gold/10 p-6">
+            <h3 class="font-display text-lg font-bold text-ink">💡 Good to Know</h3>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-sm text-ink/70">
+              <li>Orders start as <em>New / Unpaid</em>. Always verify the money before confirming payment.</li>
+              <li>This dashboard is protected by Firebase Auth — never share your login details.</li>
+              <li>Product photos and payment proofs are stored on Cloudinary; database records are stored on Firestore.</li>
+            </ul>
+          </article>
+
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-10 bg-ink py-6 text-center text-xs text-cream/50">
+      © <span id="footer-year"></span> Mummy K Kiddies Empire — Admin Dashboard
+    </footer>
+  </section>
+
+  <!-- ============================ TOAST ============================ -->
+  <div id="toast" class="pointer-events-none fixed bottom-6 left-1/2 z-[60] hidden -translate-x-1/2 rounded-full bg-ink px-6 py-3 text-sm font-semibold text-cream shadow-xl"></div>
+
+  <!-- ===== Admin logic (ES Module) ===== -->
+  <script type="module" src="js/admin.js"></script>
+</body>
+</html>
