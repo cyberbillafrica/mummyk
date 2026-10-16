@@ -21,6 +21,7 @@ import {
   getDocs,
   addDoc,
   updateDoc,
+  deleteDoc,
   doc,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -348,6 +349,167 @@ document.getElementById("save-products-btn").addEventListener("click", async () 
 });
 
 /* ==========================================================================
+ * 5b. MANAGE PRODUCTS TAB — view, edit and delete products
+ * ========================================================================== */
+
+/** Render the Manage Products table (newest first) */
+async function loadManageProducts() {
+  const tbody = document.getElementById("manage-products-table-body");
+  try {
+    const snapshot = await getDocs(collection(db, "products"));
+    const products = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+    products.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+
+    if (!products.length) {
+      tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-ink/50">No products yet. Use the Add Products tab to create your first product.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = products
+      .map((product) => {
+        const sizesText = (product.sizes || [])
+          .map((size) => escapeHtml(String(size)))
+          .join(", ") || "—";
+
+        const mediaCell =
+          product.mediaUrl
+            ? `<div class="flex items-center gap-2">
+                 <div class="relative">
+                   ${product.mediaType === "video"
+                     ? `<video src="${escapeHtml(product.mediaUrl)}" class="h-10 w-10 rounded-lg object-cover" muted></video>`
+                     : `<img src="${escapeHtml(product.mediaUrl)}" class="h-10 w-10 rounded-lg object-cover" alt="" />`}
+                   <button type="button" data-action="clear-media" data-id="${escapeHtml(product.id)}"
+                     class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white border border-ink/20 text-ink shadow"
+                     title="Remove this media">&times;</button>
+                 </div>
+                 <span class="text-xs text-ink/50">${product.mediaType === "video" ? "Video" : "Photo"}</span>
+               </div>`
+            : `<span class="text-ink/40">None</span>`;
+
+        return `
+        <tr class="align-top transition hover:bg-cream">
+          <td class="whitespace-nowrap px-4 py-3 text-xs text-ink/60">${formatDate(product.createdAt)}</td>
+          <td class="whitespace-nowrap px-4 py-3 font-semibold text-ink">${escapeHtml(product.name)}</td>
+          <td class="whitespace-nowrap px-4 py-3">
+            <span class="rounded-full bg-ink/5 px-2.5 py-1 text-[11px] font-bold text-ink">${escapeHtml(product.category || "—")}</span>
+          </td>
+          <td class="whitespace-nowrap px-4 py-3 text-xs text-ink/70">${escapeHtml(sizesText)}</td>
+          <td class="whitespace-nowrap px-4 py-3 font-bold text-ink">${formatNaira(product.price)}</td>
+          <td class="whitespace-nowrap px-4 py-3">${mediaCell}</td>
+          <td class="whitespace-nowrap px-4 py-3">
+            <div class="flex flex-wrap gap-1.5">
+              <button data-action="edit" data-id="${escapeHtml(product.id)}"
+                class="rounded-full bg-gold px-3 py-1.5 text-[11px] font-bold text-ink transition hover:bg-gold-light">
+                ✏️ Edit
+              </button>
+              <button data-action="delete" data-id="${escapeHtml(product.id)}"
+                class="rounded-full border border-red-500 px-3 py-1.5 text-[11px] font-bold text-red-600 transition hover:bg-red-50">
+                🗑 Delete
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      })
+      .join("");
+
+    // Wire the action buttons
+    tbody.querySelectorAll("button[data-action]").forEach((btn) => {
+      btn.addEventListener("click", () => handleManageProductAction(btn.dataset.action, btn.dataset.id));
+    });
+  } catch (error) {
+    console.error("Failed to load products:", error);
+    tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-red-500">Could not load products. Please refresh.</td></tr>`;
+  }
+}
+
+/** Edit or delete a product */
+async function handleManageProductAction(action, productId) {
+  if (action === "delete") {
+    if (window.confirm("Delete this product from the store? This cannot be undone.")) {
+      try {
+        await deleteDoc(doc(db, "products", productId));
+        showToast("Product deleted 🗑");
+        loadManageProducts();
+      } catch (error) {
+        console.error("Failed to delete product:", error);
+        showToast("Could not delete product. Please try again.");
+      }
+    }
+    return;
+  }
+
+  if (action === "edit") {
+    try {
+      const snapshot = await getDocs(collection(db, "products"));
+      const product = snapshot.docs.find((docSnap) => docSnap.id === productId);
+      if (!product) {
+        showToast("Product not found.");
+        return;
+      }
+
+      const data = product.data();
+
+      // Switch to the Add Products tab
+      document.querySelector('[data-tab="tab-products"]')?.click();
+
+      // Clear existing forms and build one pre-filled form
+      document.getElementById("product-forms").innerHTML = "";
+      productFormCount = 0;
+      addProductForm();
+
+      const form = document.querySelector(".product-form");
+      form.querySelector(".pf-name").value = data.name || "";
+      form.querySelector(".pf-price").value = data.price ?? "";
+      form.querySelector(".pf-category").value = data.category || "Clothes";
+      form.querySelector(".pf-sizes").value = (data.sizes || []).join(", ");
+      form.querySelector(".pf-youtube").value = data.youtubeUrl || "";
+      form.querySelector(".pf-media-url").value = data.mediaUrl || "";
+      form.querySelector(".pf-media-type").value = data.mediaType || "image";
+
+      // Show the stored media preview (if any)
+      const mediaUrl = data.mediaUrl;
+      const mediaType = data.mediaType || "image";
+      const preview = form.querySelector(".pf-media-preview");
+      if (mediaUrl) {
+        preview.innerHTML =
+          mediaType === "video"
+            ? `<video src="${escapeHtml(mediaUrl)}" class="h-12 w-12 rounded-lg object-cover" muted></video>
+               <span class="text-xs font-semibold text-green-700">Video uploaded ✅</span>`
+            : `<img src="${escapeHtml(mediaUrl)}" class="h-12 w-12 rounded-lg object-cover" alt="preview" />
+               <span class="text-xs font-semibold text-green-700">Image uploaded ✅</span>`;
+      }
+
+      showToast("Edit the product above and save to update it.");
+    } catch (error) {
+      console.error("Failed to load product for editing:", error);
+      showToast("Could not load product. Please try again.");
+    }
+    return;
+  }
+
+  if (action === "clear-media") {
+    const tbody = document.getElementById("manage-products-table-body");
+    const row = btn.closest("tr");
+    const productId = row ? row.querySelector("button[data-action='delete']")?.dataset.id : null;
+    // Optimistically clear the media cell
+    const mediaCell = row?.querySelector("td:nth-child(6)");
+    if (mediaCell) {
+      mediaCell.innerHTML = `<span class="text-ink/40">None</span>`;
+    }
+    try {
+      const productRef = doc(db, "products", productId);
+      await updateDoc(productRef, { mediaUrl: "", mediaType: "image" });
+      showToast("Media removed ✅");
+      loadManageProducts();
+    } catch (error) {
+      console.error("Failed to clear media:", error);
+      loadManageProducts();
+      showToast("Could not remove media. Please try again.");
+    }
+  }
+}
+
+/* ==========================================================================
  * 6. MANAGE ORDERS TAB
  * ========================================================================== */
 
@@ -596,8 +758,20 @@ function loadAllData() {
   loadOrders();
   loadMessages();
   loadSettings();
+  loadManageProducts();
 }
 
 /** One starter product form + footer year */
 document.getElementById("footer-year").textContent = new Date().getFullYear();
 addProductForm();
+
+/** Wire the "Add New Product" button on the Manage Products tab */
+document.getElementById("add-product-from-manage-btn").addEventListener("click", () => {
+  document.getElementById("tab-manage-products").classList.remove("hidden");
+  const manageBtn = document.querySelector('[data-tab="tab-manage-products"]');
+  manageBtn?.classList.add("border-gold", "text-ink");
+  manageBtn?.classList.remove("border-transparent", "text-ink/60");
+  loadManageProducts();
+  // Open Add Products tab so the user can actually add the product
+  document.querySelector('[data-tab="tab-products"]')?.click();
+});

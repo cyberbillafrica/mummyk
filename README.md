@@ -96,10 +96,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Anyone can browse products…
+    // Products: customers can read; only admins can create/update/delete.
     match /products/{productId} {
       allow read: if true;
-      allow write: if request.auth != null; // only signed-in admins
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
     }
 
     // Anyone can place an order (customers are not signed in)…
@@ -125,7 +127,9 @@ service cloud.firestore {
     // writable only by signed-in admins.
     match /settings/{settingsId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
     }
   }
 }
@@ -218,6 +222,7 @@ Open `admin.html` and sign in with the Firebase admin user.
 
 | Tab | What it does |
 |-----|--------------|
+| **Manage Products** | See every live product (name, category, sizes, price, media), plus **Edit**, **Delete** and **remove media**. The **Add New Product** button jumps straight to the **Add Products** form. |
 | **Add Products** | Dynamic forms ("+ Add More Product"), Cloudinary uploads, bulk **Save All Products**. |
 | **Manage Orders** | All orders + item bookings (tagged "Booking") with **Confirm Payment**, **Mark Delivered**, **Reject Proof** buttons. |
 | **Messages** | Customer messages; click the status button to cycle **New → In Progress → Resolved**. |

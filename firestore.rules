@@ -2,10 +2,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Anyone can browse products…
+    // Products: anyone can read; only signed-in admins can manage them.
+    // Admin CRUD: create, update (full replace or single-field patches), and
+    // delete are all gated on auth so the Manage Products tab works end-to-end.
     match /products/{productId} {
       allow read: if true;
-      allow write: if request.auth != null; // only signed-in admins
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
     }
 
     // Anyone can place an order (customers are not signed in)…
@@ -31,7 +35,9 @@ service cloud.firestore {
     // writable only by signed-in admins.
     match /settings/{settingsId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
     }
   }
 }
