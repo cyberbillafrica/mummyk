@@ -144,20 +144,23 @@
         <p
           class="mb-3 inline-block rounded-full border border-gold/60 px-4 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-gold"
         >
-          ✨ New Season Promo ✨
+          🎉 5th Year Anniversary • 3 Days Sales 🎉
         </p>
 
         <!-- Static promotion text (from the flyer) -->
         <h1
           class="font-display text-3xl font-bold leading-tight text-cream sm:text-5xl lg:text-6xl"
         >
-          Adorable Styles for Your <span class="text-gold">Little Stars!</span>
+          5th Year Anniversary — 3 Days Sales!
+          <span class="text-gold">All Items at Discount Price</span>
         </h1>
 
         <p class="mt-4 max-w-2xl text-sm text-cream/80 sm:text-lg">
+          Celebrating 5 years of growth, love and support from our amazing
+          customers — <strong class="text-gold">27th – 29th October.</strong>
           Shop premium kids' clothes, shoes, bags and accessories at amazing
-          prices. Quality you can trust, styles they will love. Nationwide
-          delivery available!
+          prices. Enjoy free delivery within Enugu State and nationwide on all
+          orders above ₦50,000.
         </p>
 
         <div class="mt-6 flex flex-wrap items-center gap-3">
@@ -167,6 +170,13 @@
           >
             Shop Now
           </a>
+          <button
+            id="book-item-btn"
+            type="button"
+            class="rounded-full border-2 border-gold px-6 py-3 text-sm font-bold text-gold transition hover:bg-gold hover:text-ink"
+          >
+            🛍️ Book an Item
+          </button>
           <a
             href="admin.html"
             class="rounded-full border border-cream/40 px-6 py-3 text-sm font-semibold text-cream transition hover:border-gold hover:text-gold sm:hidden"
@@ -228,6 +238,40 @@
           Others
         </button>
       </div>
+
+      <!-- Search + price sort toolbar -->
+      <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div class="relative flex-1">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-ink/40"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M21 21l-4.35-4.35M17 11a6 6 0 11-12 0 6 6 0 0112 0z"
+            />
+          </svg>
+          <input
+            id="product-search"
+            type="search"
+            placeholder="Search products (e.g. shoes, gown, bag)…"
+            class="w-full rounded-full border-2 border-ink/15 bg-white py-2.5 pl-12 pr-4 text-sm outline-none transition focus:border-gold"
+          />
+        </div>
+        <select
+          id="product-sort"
+          class="rounded-full border-2 border-ink/15 bg-white px-4 py-2.5 text-sm font-semibold text-ink outline-none transition focus:border-gold"
+        >
+          <option value="newest">Sort: Newest First</option>
+          <option value="price-asc">Price: Low → High</option>
+          <option value="price-desc">Price: High → Low</option>
+        </select>
+      </div>
     </section>
 
     <!-- ============================ PRODUCT GRID ============================ -->
@@ -246,10 +290,10 @@
       <!-- Empty state -->
       <div id="product-empty" class="hidden py-16 text-center">
         <p class="font-display text-2xl font-bold text-ink/70">
-          No products in this category yet
+          No products found
         </p>
         <p class="mt-2 text-sm text-ink/50">
-          Please check back soon — new arrivals drop regularly!
+          Try another search or category — new arrivals drop regularly!
         </p>
       </div>
 
@@ -281,6 +325,32 @@
             Quality kids' fashion at lovely prices. Clothes • Shoes • Bags •
             Accessories
           </p>
+
+          <!-- Contact info (from the official flyer) -->
+          <div class="space-y-1 text-sm text-cream/70">
+            <p>
+              📞
+              <a
+                href="https://wa.me/2347014368767"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-gold hover:underline"
+                >07014368767 (WhatsApp)</a
+              >
+            </p>
+            <p>
+              📍 No. 6, 8 and 10 Nnamuchinabo Street, Off Town School Road,
+              Emene, Enugu State (At the back of Eminite company)
+            </p>
+            <p>
+              Facebook: Mummy k kiddies Empire &amp; @Nnamchi sandra • IG:
+              @Mummyk_kiddies_
+            </p>
+            <p class="font-semibold text-gold">
+              Enjoy free delivery within Enugu State and nationwide on all
+              orders above ₦50,000.
+            </p>
+          </div>
 
           <!-- Footer Navigation -->
           <div class="flex items-center gap-4 text-xs text-cream/60">
@@ -538,15 +608,19 @@
             <div class="mt-3 space-y-1 rounded-xl bg-cream p-4 text-sm">
               <p>
                 <span class="text-ink/50">Bank:</span>
-                <span id="bank-name-display" class="font-semibold">—</span>
+                <span id="bank-name-display" class="font-semibold">OPAY</span>
               </p>
               <p>
                 <span class="text-ink/50">Account Name:</span>
-                <span id="account-name-display" class="font-semibold">—</span>
+                <span id="account-name-display" class="font-semibold"
+                  >MummyK Kiddies Empire</span
+                >
               </p>
               <p>
                 <span class="text-ink/50">Account Number:</span>
-                <span id="account-number-display" class="font-semibold">—</span>
+                <span id="account-number-display" class="font-semibold"
+                  >7014368767</span
+                >
               </p>
             </div>
 
@@ -575,6 +649,162 @@
             class="mt-6 w-full rounded-full border-2 border-ink/15 px-6 py-3 text-sm font-semibold text-ink transition hover:border-gold"
           >
             Done — Continue Shopping
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================ SHOE BOOKING MODAL ============================ -->
+    <div id="booking-modal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+      <div id="booking-backdrop" class="fixed inset-0 bg-black/60"></div>
+
+      <div
+        class="relative mx-auto my-6 w-[92%] max-w-lg rounded-2xl bg-cream p-6 shadow-2xl sm:p-8"
+      >
+        <button
+          id="close-booking"
+          class="absolute right-4 top-4 rounded-full p-2 text-ink/60 transition hover:bg-ink/5 hover:text-ink"
+          aria-label="Close booking form"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+
+        <h3 class="font-display text-2xl font-bold">🛍️ Book an Item (Pre-order)</h3>
+        <p class="mt-1 text-sm text-ink/60">
+          We are already shipping 🚢 from China 🇨🇳 to Nigeria 🇳🇬 — all sizes
+          will be available in less than 2 weeks. At our Enugu branch we sell at
+          a very cheap rate. Booking is FREE — pay when your items arrive.
+        </p>
+
+        <form id="booking-form" class="mt-6 space-y-4">
+          <div>
+            <label
+              for="book-item-type"
+              class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70"
+              >What would you like to book?</label
+            >
+            <select
+              id="book-item-type"
+              required
+              class="w-full rounded-xl border-2 border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-gold"
+            >
+              <option value="Shoes" selected>
+                Shoes (sneakers, sandals, boots)
+              </option>
+              <option value="Clothes">Clothes (gowns, shirts, trousers)</option>
+              <option value="Bags">Bags (school bags, lunch bags)</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
+          <div>
+            <label
+              for="book-name"
+              class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70"
+              >Your Name</label
+            >
+            <input
+              id="book-name"
+              type="text"
+              required
+              placeholder="e.g. Ada Obi"
+              class="w-full rounded-xl border-2 border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-gold"
+            />
+          </div>
+          <div>
+            <label
+              for="book-phone"
+              class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70"
+              >Phone Number</label
+            >
+            <input
+              id="book-phone"
+              type="tel"
+              required
+              placeholder="e.g. 0801 234 5678"
+              class="w-full rounded-xl border-2 border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-gold"
+            />
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                for="book-size"
+                class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70"
+                >Size / Measurement</label
+              >
+              <input
+                id="book-size"
+                type="text"
+                required
+                placeholder="e.g. 28, 30 (shoes) or 4yrs, 6yrs (clothes)"
+                class="w-full rounded-xl border-2 border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-gold"
+              />
+            </div>
+            <div>
+              <label
+                for="book-quantity"
+                class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70"
+                >Quantity</label
+              >
+              <input
+                id="book-quantity"
+                type="number"
+                min="1"
+                value="1"
+                required
+                class="w-full rounded-xl border-2 border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-gold"
+              />
+            </div>
+          </div>
+          <div>
+            <label
+              for="book-note"
+              class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70"
+              >Note (optional)</label
+            >
+            <textarea
+              id="book-note"
+              rows="3"
+              placeholder="Colour preference, style, or anything else…"
+              class="w-full rounded-xl border-2 border-ink/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-gold"
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            id="booking-submit-btn"
+            class="w-full rounded-full bg-gold px-6 py-3 text-sm font-bold text-ink transition hover:bg-gold-light disabled:opacity-50"
+          >
+            📲 Book via WhatsApp
+          </button>
+        </form>
+
+        <!-- Success panel (shown after the booking is saved) -->
+        <div id="booking-success" class="mt-6 hidden rounded-2xl border-2 border-green-600 bg-green-50 p-5 text-center">
+          <p class="text-sm font-bold text-green-700">✅ Booking saved!</p>
+          <p class="mt-2 text-sm text-ink/70">
+            Your booking reference is
+            <span id="booking-ref-display" class="font-bold text-ink"></span>
+            — WhatsApp is opening in a new tab to complete your booking.
+          </p>
+          <button
+            id="close-booking-success"
+            type="button"
+            class="mt-4 w-full rounded-full border-2 border-ink/15 px-6 py-3 text-sm font-semibold text-ink transition hover:border-gold"
+          >
+            Done
           </button>
         </div>
       </div>

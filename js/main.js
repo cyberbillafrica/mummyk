@@ -7,13 +7,19 @@
  *
  * FIRESTORE DATA SCHEMA (used by this app):
  *   products : { name, price, category, sizes: [], mediaUrl, mediaType, youtubeUrl, createdAt }
- *   orders   : { orderRef, customerName, customerPhone, customerAddress, items: [],
+ *   orders   : { orderRef, orderType, customerName, customerPhone, customerAddress, items: [],
  *                subtotal, orderStatus, paymentStatus, paymentMethod, paymentProofUrl, createdAt }
+ *                (orderType is "Order" for checkouts, "Booking" for pre-order item bookings)
  *   messages : { name, phone, orderRef, category, message, status, createdAt }
  *   settings : { whatsappNumber, bankName, accountName, accountNumber, announcement }
  * ========================================================================== */
 
-import { firebaseConfig, cloudinary, whatsappNumber } from "./config.js";
+import {
+  firebaseConfig,
+  cloudinary,
+  whatsappNumber,
+  defaultSettings,
+} from "./config.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
   getFirestore,
@@ -195,16 +201,42 @@ function renderCart() {
  * ========================================================================== */
 let allProducts = []; // cached so filters don't re-fetch
 let activeCategory = "All";
+let searchQuery = ""; // text typed into the search box
+let sortMode = "newest"; // newest | price-asc | price-desc
 
-/** Render the product grid for the selected category */
+/** Combine category filter + search + sorting into the visible product list */
+function getVisibleProducts() {
+  let list =
+    activeCategory === "All"
+      ? [...allProducts]
+      : allProducts.filter((p) => p.category === activeCategory);
+
+  // Search by product name (case-insensitive)
+  if (searchQuery) {
+    const query = searchQuery.toLowerCase();
+    list = list.filter((p) => (p.name || "").toLowerCase().includes(query));
+  }
+
+  // Sort by price (low→high / high→low) or newest first
+  if (sortMode === "price-asc") {
+    list.sort((a, b) => (a.price || 0) - (b.price || 0));
+  } else if (sortMode === "price-desc") {
+    list.sort((a, b) => (b.price || 0) - (a.price || 0));
+  } else {
+    list.sort(
+      (a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)
+    );
+  }
+
+  return list;
+}
+
+/** Render the product grid for the selected category + search + sort */
 function renderProducts() {
   const grid = document.getElementById("product-grid");
   const empty = document.getElementById("product-empty");
 
-  const filtered =
-    activeCategory === "All"
-      ? allProducts
-      : allProducts.filter((p) => p.category === activeCategory);
+  const filtered = getVisibleProducts();
 
   empty.classList.toggle("hidden", filtered.length > 0);
 
@@ -323,16 +355,34 @@ function initCategoryFilters() {
   });
 }
 
+/** Search box + price sort dropdown */
+function initSearchAndSort() {
+  const searchInput = document.getElementById("product-search");
+  const sortSelect = document.getElementById("product-sort");
+
+  // Re-render live as the customer types
+  searchInput.addEventListener("input", () => {
+    searchQuery = searchInput.value.trim();
+    renderProducts();
+  });
+
+  // Re-render when the sort order changes
+  sortSelect.addEventListener("change", () => {
+    sortMode = sortSelect.value;
+    renderProducts();
+  });
+}
+
 /* ==========================================================================
  * 5. SETTINGS — announcement banner, WhatsApp number, bank details
  * The settings doc lives at: settings/business
  * ========================================================================== */
 let businessSettings = {
-  whatsappNumber: "",
-  bankName: "",
-  accountName: "",
-  accountNumber: "",
-  announcement: "",
+  whatsappNumber: defaultSettings.whatsappNumber,
+  bankName: defaultSettings.bankName,
+  accountName: defaultSettings.accountName,
+  accountNumber: defaultSettings.accountNumber,
+  announcement: defaultSettings.announcement,
 };
 
 async function fetchSettings() {
@@ -345,20 +395,22 @@ async function fetchSettings() {
     console.error("Failed to load settings:", error);
   }
 
-  // Announcement banner
+  // Announcement banner (Firestore settings win, config default otherwise)
   const bar = document.getElementById("announcement-bar");
-  if (businessSettings.announcement) {
-    bar.textContent = businessSettings.announcement;
+  const announcement =
+    businessSettings.announcement || defaultSettings.announcement;
+  if (announcement) {
+    bar.textContent = announcement;
     bar.classList.remove("hidden");
   }
 
-  // Bank details in the checkout modal
+  // Bank details in the checkout modal (Firestore settings win, config defaults otherwise)
   document.getElementById("bank-name-display").textContent =
-    businessSettings.bankName || "—";
+    businessSettings.bankName || defaultSettings.bankName;
   document.getElementById("account-name-display").textContent =
-    businessSettings.accountName || "—";
+    businessSettings.accountName || defaultSettings.accountName;
   document.getElementById("account-number-display").textContent =
-    businessSettings.accountNumber || "—";
+    businessSettings.accountNumber || defaultSettings.accountNumber;
 }
 
 /* ==========================================================================
@@ -388,6 +440,7 @@ async function handleCheckoutSubmit(event) {
 
   const order = {
     orderRef: generateOrderRef(),
+    orderType: "Order",
     customerName: document.getElementById("customer-name").value.trim(),
     customerPhone: document.getElementById("customer-phone").value.trim(),
     customerAddress: document.getElementById("customer-address").value.trim(),
@@ -565,6 +618,115 @@ async function handleMessageSubmit(event) {
 }
 
 /* ==========================================================================
+ * 7b. ITEM BOOKING (PRE-ORDER) — save a booking record + hand off to WhatsApp
+ * Works for shoes, clothes, bags and more (item type chosen in a dropdown).
+ * Bookings live in the orders collection with orderType "Booking" so they are
+ * visible in the admin Manage Orders table.
+ * ========================================================================== */
+
+/** Reset the booking modal for next time */
+function resetBookingModal() {
+  document.getElementById("booking-form").reset();
+  document.getElementById("booking-form").classList.remove("hidden");
+  document.getElementById("booking-success").classList.add("hidden");
+}
+
+/** Save the booking to Firestore, then open a pre-filled WhatsApp chat */
+async function handleBookingSubmit(event) {
+  event.preventDefault();
+  const btn = document.getElementById("booking-submit-btn");
+  btn.disabled = true;
+  btn.textContent = "Saving booking…";
+
+  const itemType = document.getElementById("book-item-type").value;
+  const size = document.getElementById("book-size").value.trim();
+  const quantity = Number(document.getElementById("book-quantity").value) || 1;
+  const note = document.getElementById("book-note").value.trim();
+
+  const booking = {
+    orderRef: generateOrderRef(),
+    orderType: "Booking",
+    customerName: document.getElementById("book-name").value.trim(),
+    customerPhone: document.getElementById("book-phone").value.trim(),
+    customerAddress: "Enugu branch",
+    items: [
+      {
+        productId: "",
+        name: `${itemType} Booking`,
+        price: 0,
+        size,
+        quantity,
+      },
+    ],
+    subtotal: 0,
+    orderStatus: "New",
+    paymentStatus: "Unpaid",
+    paymentMethod: "WhatsApp Booking",
+    paymentProofUrl: "",
+    note,
+    createdAt: serverTimestamp(),
+  };
+
+  try {
+    await addDoc(collection(db, "orders"), booking);
+
+    // Show the reference on screen
+    document.getElementById("booking-ref-display").textContent = booking.orderRef;
+    document.getElementById("booking-form").classList.add("hidden");
+    document.getElementById("booking-success").classList.remove("hidden");
+
+    // Hand off to WhatsApp with the booking details
+    const number = businessSettings.whatsappNumber || whatsappNumber;
+    const message = [
+      `🛍️ *${itemType} Booking — Mummy K Kiddies Empire*`,
+      ``,
+      `*Booking Ref:* ${booking.orderRef}`,
+      `*Item:* ${itemType}`,
+      `*Name:* ${booking.customerName}`,
+      `*Phone:* ${booking.customerPhone}`,
+      `*Size / Measurement:* ${size}`,
+      `*Quantity:* ${quantity}`,
+      ...(note ? [`*Note:* ${note}`] : []),
+      ``,
+      `I would like to book ${itemType.toLowerCase()} from the China 🇨🇳 → Nigeria 🇳🇬 shipment. Thank you!`,
+    ].join("\n");
+
+    window.open(
+      `https://wa.me/${number}?text=${encodeURIComponent(message)}`,
+      "_blank"
+    );
+    showToast(`Booking ${booking.orderRef} saved ✅`);
+  } catch (error) {
+    console.error("Failed to save booking:", error);
+    showToast("Could not save booking. Please try again.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "📲 Book via WhatsApp";
+  }
+}
+
+/** Wire the shoe booking modal */
+function initBooking() {
+  const open = () => openModal("booking-modal");
+  document.getElementById("book-item-btn").addEventListener("click", open);
+  document
+    .getElementById("close-booking")
+    .addEventListener("click", () => closeModal("booking-modal"));
+  document
+    .getElementById("booking-backdrop")
+    .addEventListener("click", () => closeModal("booking-modal"));
+  document
+    .getElementById("close-booking-success")
+    .addEventListener("click", () => {
+      closeModal("booking-modal");
+      resetBookingModal();
+    });
+  document
+    .getElementById("booking-form")
+    .addEventListener("submit", handleBookingSubmit);
+}
+
+/* ==========================================================================
  * 8. INITIALIZATION — wire up all events
  * ========================================================================== */
 function init() {
@@ -603,8 +765,10 @@ function init() {
   document.getElementById("message-backdrop").addEventListener("click", () => closeModal("message-modal"));
   document.getElementById("message-form").addEventListener("submit", handleMessageSubmit);
 
-  // Load data
+  // Load data + wire search, sorting and shoe booking
   initCategoryFilters();
+  initSearchAndSort();
+  initBooking();
   renderCart();
   fetchProducts();
   fetchSettings();

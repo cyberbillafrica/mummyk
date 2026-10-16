@@ -14,12 +14,14 @@ HTML5 + Tailwind CSS (CDN) + Vanilla JavaScript (ES Modules), with **Firebase**
 
 ```
 MummyK/
-├── index.html      → Storefront (products, cart, checkout, messages)
+├── index.html      → Storefront (search, cart, checkout, shoe booking, messages)
 ├── admin.html      → Admin dashboard (products, orders, messages, settings, help)
+├── seed.html       → 🌱 Bulk data import tool (optional)
 ├── js/
-│   ├── config.js   → 🔑 ALL keys go here (Firebase, Cloudinary, WhatsApp)
+│   ├── config.js   → 🔑 ALL keys + business info live here
 │   ├── main.js     → Storefront logic
-│   └── admin.js    → Admin logic
+│   ├── admin.js    → Admin logic
+│   └── seed.js     → Bulk-import logic
 └── README.md       → This guide
 ```
 
@@ -27,7 +29,7 @@ MummyK/
 
 ## 🚀 Quick Start
 
-1. Fill in your keys in **`js/config.js`** (see below).
+1. Your keys and business info are set in **`js/config.js`** — review them (see below).
 2. Set up Firebase (Auth + Firestore + Security Rules).
 3. Set up Cloudinary (two unsigned upload presets).
 4. Open `index.html` in a browser — for local testing use a simple static server
@@ -69,7 +71,7 @@ first write:
 | Collection  | Document shape |
 |-------------|----------------|
 | `products`  | `{ name, price, category, sizes: [], mediaUrl, mediaType, youtubeUrl, createdAt }` |
-| `orders`    | `{ orderRef, customerName, customerPhone, customerAddress, items: [], subtotal, orderStatus, paymentStatus, paymentMethod, paymentProofUrl, createdAt }` |
+| `orders`    | `{ orderRef, orderType, customerName, customerPhone, customerAddress, items: [], subtotal, orderStatus, paymentStatus, paymentMethod, paymentProofUrl, createdAt }` |
 | `messages`  | `{ name, phone, orderRef, category, message, status, createdAt }` |
 | `settings`  | `{ whatsappNumber, bankName, accountName, accountNumber, announcement }` |
 
@@ -77,6 +79,7 @@ Field notes:
 
 - `products.category` — one of `Clothes`, `Shoes`, `Bags`, `Others`
 - `products.mediaType` — `"image"` or `"video"`
+- `orders.orderType` — `"Order"` (normal checkout) or `"Booking"` (shoe booking)
 - `orders.orderStatus` — `"New"` → `"Delivered"`
 - `orders.paymentStatus` — `"Unpaid"` → `"Proof Submitted"` → `"Confirmed"` / `"Rejected"`
 - `orders.paymentMethod` — `""` (until chosen), `"WhatsApp"` or `"Bank Transfer"`
@@ -168,13 +171,16 @@ export const firebaseConfig = {
 };
 
 export const cloudinary = {
-  cloudName: "…",           // Cloudinary dashboard
-  uploadPreset: "…",        // the UNSIGNED upload preset name
+  cloudName: "dvvwuktq",     // Cloudinary dashboard
+  uploadPreset: "mummyk",    // the UNSIGNED upload preset name
   productFolder: "mummyk/products",
   receiptFolder: "mummyk/receipts",
 };
 
-export const whatsappNumber = "2348012345678"; // fallback only
+export const whatsappNumber = "2347014368767"; // fallback only
+
+export const businessInfo = { /* name, address, socials from the flyer */ };
+export const defaultSettings = { /* OPAY details + current announcement */ };
 ```
 
 > The WhatsApp number saved in **Admin → Business Settings** always takes
@@ -184,8 +190,9 @@ export const whatsappNumber = "2348012345678"; // fallback only
 
 ## 🛍️ How the Store Works
 
-1. **Browse & filter** — customers filter products by All / Clothes / Shoes /
-   Bags / Others.
+1. **Browse, search & filter** — customers filter products by All / Clothes /
+   Shoes / Bags / Others, search by name live, and sort by price
+   (low→high / high→low) or newest first.
 2. **Cart** — saved in `localStorage` (survives refreshes). Choose sizes, change
    quantities, remove items.
 3. **Checkout** — customer enters name, phone and delivery address. An order is
@@ -197,7 +204,12 @@ export const whatsappNumber = "2348012345678"; // fallback only
    - **Bank Transfer** — shows the bank details from settings; the customer
      uploads proof of payment to Cloudinary (`mummyk/receipts`). The order is
      updated to `paymentStatus: "Proof Submitted"`.
-5. **Messages** — the floating "Send us a Message" button saves complaints /
+5. **Item booking (pre-order)** — the "Book an Item" button opens a booking
+   form with an item-type dropdown (Shoes, Clothes, Bags, Others) plus name,
+   phone, size/measurement, quantity and note. The booking is saved to the
+   `orders` collection with `orderType: "Booking"` (tagged in the admin
+   dashboard) and WhatsApp opens with the booking details.
+6. **Messages** — the floating "Send us a Message" button saves complaints /
    enquiries to the `messages` collection.
 
 ## 🛠️ How the Admin Portal Works
@@ -207,10 +219,47 @@ Open `admin.html` and sign in with the Firebase admin user.
 | Tab | What it does |
 |-----|--------------|
 | **Add Products** | Dynamic forms ("+ Add More Product"), Cloudinary uploads, bulk **Save All Products**. |
-| **Manage Orders** | All orders in a table with **Confirm Payment**, **Mark Delivered**, **Reject Proof** buttons. |
+| **Manage Orders** | All orders + item bookings (tagged "Booking") with **Confirm Payment**, **Mark Delivered**, **Reject Proof** buttons. |
 | **Messages** | Customer messages; click the status button to cycle **New → In Progress → Resolved**. |
 | **Business Settings** | WhatsApp number, bank details, announcement banner text. |
 | **Help Guide** | Built-in usage manual for the admin. |
+
+---
+
+## 🌱 Seeding Data Without Adding Everything Manually
+
+Yes — there are several ways to fill Firestore without clicking "+ Add More
+Product" for every item:
+
+1. **`seed.html` (included, recommended)** — open `seed.html`, sign in with the
+   admin account, paste a JSON array of products and click **Import Products**.
+   The data is validated first, then bulk-written to the `products` collection.
+   The **Seed Settings Document** button creates the `settings` document from
+   the defaults in `js/config.js` (WhatsApp number, OPAY details, announcement).
+2. **Admin → Add Products** — the **Save All Products** button already
+   bulk-commits as many forms as you fill in at once.
+3. **Firebase Console** — Firestore → start a collection → add documents by hand
+   (fine for the single `settings` document, tedious for products).
+4. **A Node.js seed script (`firebase-admin`)** — the usual approach for very
+   large datasets, but this project deliberately avoids Node.js, so
+   `seed.html` is the in-browser equivalent.
+
+Import format — one object per product (`createdAt` is added automatically):
+
+```json
+{
+  "name": "Floral Summer Dress",
+  "price": 7500,
+  "category": "Clothes",
+  "sizes": ["2yrs", "4yrs", "6yrs"],
+  "mediaUrl": "https://res.cloudinary.com/…/image.jpg",
+  "mediaType": "image",
+  "youtubeUrl": ""
+}
+```
+
+> 💡 Upload the photos/videos first (admin dashboard or Cloudinary Media
+> Library), then paste the Cloudinary URLs into the JSON.
 
 ---
 

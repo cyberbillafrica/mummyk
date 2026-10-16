@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Data Import Tool | Mummy K Kiddies Empire</title>
+
+  <!-- ===== Fonts ===== -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- ===== Tailwind CSS (CDN) ===== -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: { DEFAULT: "#D4AF37", dark: "#B8952E", light: "#E8C96A" },
+            cream: "#FDFBF7",
+            ink: "#111111",
+          },
+          fontFamily: {
+            display: ['"Playfair Display"', "serif"],
+            body: ["Inter", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    body {
+      font-family: "Inter", sans-serif;
+    }
+    .font-display {
+      font-family: "Playfair Display", serif;
+    }
+  </style>
+</head>
+
+<body class="bg-cream text-ink font-body antialiased">
+  <!-- Top bar -->
+  <header class="bg-ink text-cream">
+    <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
+      <div class="flex items-center gap-2">
+        <span class="flex h-9 w-9 items-center justify-center rounded-full bg-gold text-lg font-bold text-ink">MK</span>
+        <span class="leading-tight">
+          <span class="block font-display text-base font-bold text-gold">Mummy K</span>
+          <span class="block text-[10px] uppercase tracking-[0.2em] text-cream/70">Data Import Tool</span>
+        </span>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="admin.html" class="rounded-full border border-gold/60 px-3 py-1.5 text-xs font-semibold text-gold transition hover:bg-gold hover:text-ink">
+          Admin Dashboard
+        </a>
+        <button id="logout-btn" class="hidden rounded-full bg-gold px-4 py-1.5 text-xs font-bold text-ink transition hover:bg-gold-light">
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+
+    <!-- ============================ SIGN IN ============================ -->
+    <section id="login-section" class="mx-auto max-w-md rounded-2xl border border-ink/10 bg-white p-8 shadow-xl">
+      <h1 class="font-display text-2xl font-bold">Admin Sign In</h1>
+      <p class="mt-1 text-sm text-ink/60">
+        This tool writes to Firestore, so it needs the admin login (same as the
+        admin dashboard).
+      </p>
+
+      <form id="login-form" class="mt-6 space-y-4">
+        <div>
+          <label for="login-email" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70">Email</label>
+          <input id="login-email" type="email" required placeholder="admin@example.com"
+            class="w-full rounded-xl border-2 border-ink/10 bg-cream px-4 py-3 text-sm outline-none transition focus:border-gold" />
+        </div>
+        <div>
+          <label for="login-password" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/70">Password</label>
+          <input id="login-password" type="password" required placeholder="••••••••"
+            class="w-full rounded-xl border-2 border-ink/10 bg-cream px-4 py-3 text-sm outline-none transition focus:border-gold" />
+        </div>
+
+        <p id="login-error" class="hidden rounded-xl bg-red-50 px-4 py-3 text-xs font-semibold text-red-600"></p>
+
+        <button type="submit" class="w-full rounded-full bg-ink px-6 py-3 text-sm font-bold text-gold transition hover:bg-ink/90">
+          Sign In
+        </button>
+      </form>
+    </section>
+
+    <!-- ============================ IMPORT TOOL (after sign-in) ============================ -->
+    <section id="import-section" class="hidden space-y-8">
+
+      <!-- 1. PRODUCTS -->
+      <div class="rounded-2xl border border-ink/10 bg-white p-6 sm:p-8">
+        <h2 class="font-display text-xl font-bold">1. Import Products (bulk)</h2>
+        <p class="mt-1 text-sm text-ink/60">
+          Paste a <strong>JSON array</strong> of products below, then click
+          <strong>Import Products</strong>. Each product becomes a document in the
+          <code class="rounded bg-cream px-1">products</code> collection.
+        </p>
+
+        <div class="mt-4 rounded-xl bg-cream p-4 text-xs text-ink/70">
+          <p class="font-bold uppercase tracking-wide text-ink/50">Expected format (one object per product):</p>
+<pre class="mt-2 overflow-x-auto">{
+  "name": "Floral Summer Dress",
+  "price": 7500,
+  "category": "Clothes",          // Clothes | Shoes | Bags | Others
+  "sizes": ["2yrs", "4yrs", "6yrs"],
+  "mediaUrl": "https://res.cloudinary.com/…/image.jpg",
+  "mediaType": "image",            // image | video
+  "youtubeUrl": ""                 // optional
+}</pre>
+          <p class="mt-2">
+            💡 <strong>Tip:</strong> upload photos/videos in the admin dashboard first
+            (or via the Cloudinary Media Library), then paste the Cloudinary URLs here.
+            <code class="rounded bg-white px-1">createdAt</code> is added automatically.
+          </p>
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button id="load-sample-btn" type="button"
+            class="rounded-full border-2 border-ink/15 px-5 py-2 text-xs font-bold text-ink transition hover:border-gold">
+            Load Sample Data
+          </button>
+          <button id="clear-json-btn" type="button"
+            class="rounded-full border-2 border-ink/15 px-5 py-2 text-xs font-bold text-ink transition hover:border-gold">
+            Clear
+          </button>
+        </div>
+
+        <textarea id="products-json" rows="12"
+          placeholder='[ { "name": "…", "price": 5000, "category": "Shoes", "sizes": ["28","30"], "mediaUrl": "", "mediaType": "image", "youtubeUrl": "" } ]'
+          class="mt-4 w-full rounded-xl border-2 border-ink/10 bg-cream px-4 py-3 font-mono text-xs outline-none transition focus:border-gold"></textarea>
+
+        <button id="import-products-btn" type="button"
+          class="mt-4 w-full rounded-full bg-gold px-8 py-3 text-sm font-bold text-ink transition hover:bg-gold-light disabled:opacity-50 sm:w-auto">
+          📦 Import Products
+        </button>
+      </div>
+
+      <!-- 2. SETTINGS -->
+      <div class="rounded-2xl border border-ink/10 bg-white p-6 sm:p-8">
+        <h2 class="font-display text-xl font-bold">2. Seed Business Settings</h2>
+        <p class="mt-1 text-sm text-ink/60">
+          Creates (or updates) the single
+          <code class="rounded bg-cream px-1">settings</code> document using the
+          defaults from <code class="rounded bg-cream px-1">js/config.js</code> —
+          WhatsApp number, OPAY bank details and the current announcement. You can
+          fine-tune everything afterwards in Admin → Business Settings.
+        </p>
+
+        <button id="seed-settings-btn" type="button"
+          class="mt-4 w-full rounded-full bg-ink px-8 py-3 text-sm font-bold text-gold transition hover:bg-ink/90 disabled:opacity-50 sm:w-auto">
+          ⚙️ Seed Settings Document
+        </button>
+      </div>
+
+      <!-- 3. RESULT LOG -->
+      <div class="rounded-2xl border border-ink/10 bg-white p-6 sm:p-8">
+        <h2 class="font-display text-xl font-bold">Import Log</h2>
+        <div id="import-log"
+          class="mt-4 max-h-64 overflow-y-auto rounded-xl bg-ink p-4 font-mono text-xs text-green-400">
+          <p class="text-cream/50">Ready. Sign in and import when you are set.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Toast ===== -->
+  <div id="toast"
+    class="pointer-events-none fixed bottom-6 left-1/2 z-[60] hidden -translate-x-1/2 rounded-full bg-ink px-6 py-3 text-sm font-semibold text-cream shadow-xl"></div>
+
+  <!-- ===== Import logic (ES Module) ===== -->
+  <script type="module" src="js/seed.js"></script>
+</body>
+</html>

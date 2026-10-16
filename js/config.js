@@ -1,48 +1,75 @@
 /* ==========================================================================
  * Mummy K Kiddies Empire — Environment Configuration
  * --------------------------------------------------------------------------
- * Fill in EVERY placeholder below in VSCode before deploying the site.
- * This is the ONLY file you need to edit. Never commit real keys to a public
- * repository — these Firebase keys are safe to expose in a client app ONLY
- * when your Firestore Security Rules are configured correctly (see README).
+ * ALL keys and business info live in THIS file only.
+ * Firebase web keys are safe to expose in client code ONLY when the Firestore
+ * Security Rules from README.md are published (they are the real protection).
  * ========================================================================== */
 
 /* --------------------------------------------------------------------------
  * 1. FIREBASE CONFIG
- * Firebase Console → Project settings → General → Your apps → SDK setup
- * (Web app) → Config. Copy the whole config object values in below.
+ * Firebase Console → Project settings → General → Your apps → SDK setup (Web)
+ * NOTE: use this gstatic ES-module style (see js/main.js) — never the
+ * bare "import ... from 'firebase/app'" style, which browsers cannot resolve
+ * without a bundler.
  * -------------------------------------------------------------------------- */
 export const firebaseConfig = {
-  apiKey: "YOUR_FIREBASE_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyARKuGJIN5f7YftfeOfdcOQCy0hF4ne01c",
+  authDomain: "mummykkiddies.firebaseapp.com",
+  projectId: "mummykkiddies",
+  storageBucket: "mummykkiddies.firebasestorage.app",
+  messagingSenderId: "436703284165",
+  appId: "1:436703284165:web:7e82d68f5dd21da30dd9ac",
 };
 
 /* --------------------------------------------------------------------------
  * 2. CLOUDINARY CONFIG
- * Cloudinary Dashboard → Product Environment Credentials → "Cloud name".
- * Create TWO unsigned upload presets (Settings → Upload → Upload presets):
- *   - one for product media    (folder: mummyk/products)
- *   - one for payment receipts (folder: mummyk/receipts)
- * Each preset must be UNSIGNED and set to the folder shown above.
+ * Unsigned upload preset (Settings → Upload → Upload presets).
+ * Product media goes to mummyk/products, payment receipts to mummyk/receipts.
  * -------------------------------------------------------------------------- */
 export const cloudinary = {
-  cloudName: "YOUR_CLOUDINARY_CLOUD_NAME",
-  // Unsigned upload preset used by BOTH widgets (set its folder per call)
-  uploadPreset: "YOUR_UNSIGNED_UPLOAD_PRESET",
-  // Asset folders (set these on the upload presets too)
+  cloudName: "dvvwuktq",
+  uploadPreset: "mummyk",
   productFolder: "mummyk/products",
   receiptFolder: "mummyk/receipts",
 };
 
 /* --------------------------------------------------------------------------
  * 3. WHATSAPP NUMBER (fallback)
- * Business WhatsApp number in INTERNATIONAL format, digits only, no "+".
- * Example: 2348012345678
- * NOTE: the number saved in Firestore (settings/whatsappNumber) takes
- * priority at runtime — this value is only a fallback until settings exist.
+ * International format, digits only, no "+".
+ * NOTE: the number saved in Firestore (Admin → Business Settings) takes
+ * priority at runtime — this value is the fallback.
  * -------------------------------------------------------------------------- */
-export const whatsappNumber = "2348000000000";
+export const whatsappNumber = "2347014368767";
+
+/* --------------------------------------------------------------------------
+ * 4. BUSINESS INFO (from the official flyers — shown on the storefront)
+ * -------------------------------------------------------------------------- */
+export const businessInfo = {
+  name: "Mummy K Kiddies Empire",
+  tagline: "Home of kids lovers",
+  motto: "Same Passion, Bigger Dreams!",
+  phoneDisplay: "07014368767",
+  whatsappNumber: "2347014368767",
+  address:
+    "No. 6, 8 and 10 Nnamuchinabo Street, Off Town School Road, Emene, Enugu State (At the back of Eminite company)",
+  location: "Emene, Enugu State",
+  facebook: "Mummy k kiddies Empire & @Nnamchi sandra",
+  instagram: "Mummyk_kiddies_",
+  freeDelivery:
+    "Enjoy free delivery within Enugu State and nationwide on all orders above ₦50,000.",
+};
+
+/* --------------------------------------------------------------------------
+ * 5. DEFAULT SETTINGS
+ * Used as fallback when the Firestore settings collection is still empty.
+ * Once you save anything in Admin → Business Settings, Firestore wins.
+ * -------------------------------------------------------------------------- */
+export const defaultSettings = {
+  whatsappNumber: "2347014368767",
+  bankName: "OPAY",
+  accountName: "MummyK Kiddies Empire",
+  accountNumber: "7014368767",
+  announcement:
+    "Book your kids shoes now! We are already shipping 🚢 from China 🇨🇳 to Nigeria 🇳🇬 — all sizes will be available in less than 2 weeks. At our Enugu branch, we sell at a very cheap rate.",
+};

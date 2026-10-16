@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Anyone can browse products…
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if request.auth != null; // only signed-in admins
+    }
+
+    // Anyone can place an order (customers are not signed in)…
+    match /orders/{orderId} {
+      allow read: if request.auth != null; // only admins can view orders
+      allow create: if true;               // storefront creates orders
+      allow update: if request.auth != null
+                    || request.resource.data.diff(resource.data)
+                         .affectedKeys()
+                         .hasOnly(['paymentMethod', 'paymentProofUrl', 'paymentStatus']);
+      allow delete: if false;              // never delete orders
+    }
+
+    // Anyone can send a message…
+    match /messages/{messageId} {
+      allow read: if request.auth != null; // only admins can read messages
+      allow create: if true;               // storefront creates messages
+      allow update: if request.auth != null; // only admins change status
+      allow delete: if false;
+    }
+
+    // Business settings: readable by everyone (bank details show at checkout),
+    // writable only by signed-in admins.
+    match /settings/{settingsId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}

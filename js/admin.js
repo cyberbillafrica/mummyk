@@ -6,8 +6,9 @@
  *
  * FIRESTORE DATA SCHEMA (used by this app):
  *   products : { name, price, category, sizes: [], mediaUrl, mediaType, youtubeUrl, createdAt }
- *   orders   : { orderRef, customerName, customerPhone, customerAddress, items: [],
+ *   orders   : { orderRef, orderType, customerName, customerPhone, customerAddress, items: [],
  *                subtotal, orderStatus, paymentStatus, paymentMethod, paymentProofUrl, createdAt }
+ *                (orderType is "Order" for checkouts, "Booking" for pre-order item bookings)
  *   messages : { name, phone, orderRef, category, message, status, createdAt }
  *   settings : { whatsappNumber, bankName, accountName, accountNumber, announcement }
  * ========================================================================== */
@@ -390,13 +391,24 @@ async function loadOrders() {
         return `
         <tr class="align-top transition hover:bg-cream">
           <td class="whitespace-nowrap px-4 py-3 text-xs text-ink/60">${formatDate(order.createdAt)}</td>
-          <td class="whitespace-nowrap px-4 py-3 font-bold text-ink">${escapeHtml(order.orderRef)}</td>
+          <td class="whitespace-nowrap px-4 py-3 font-bold text-ink">
+            ${escapeHtml(order.orderRef)}
+            ${
+              order.orderType === "Booking"
+                ? `<span class="ml-1 rounded-full bg-gold px-2 py-0.5 text-[10px] font-bold uppercase text-ink">Booking</span>`
+                : ""
+            }
+          </td>
           <td class="px-4 py-3 text-xs">
             <p class="font-semibold text-ink">${escapeHtml(order.customerName)}</p>
             <p class="text-ink/60">${escapeHtml(order.customerPhone)}</p>
             <p class="text-ink/60">${escapeHtml(order.customerAddress)}</p>
           </td>
-          <td class="px-4 py-3 text-xs text-ink/70">${itemsText}</td>
+          <td class="px-4 py-3 text-xs text-ink/70">${itemsText}${
+            order.note
+              ? `<p class="mt-1 italic text-ink/50">Note: ${escapeHtml(order.note)}</p>`
+              : ""
+          }</td>
           <td class="whitespace-nowrap px-4 py-3 font-bold text-ink">${formatNaira(order.subtotal)}</td>
           <td class="px-4 py-3 text-xs">${proofCell}</td>
           <td class="whitespace-nowrap px-4 py-3">
