@@ -96,6 +96,27 @@ onAuthStateChanged(auth, (user) => {
   }
 });
 
+/** Password visibility toggle */
+(function wirePasswordToggle() {
+  const passwordInput = document.getElementById("login-password");
+  const toggleBtn = document.getElementById("login-password-toggle");
+  if (!passwordInput || !toggleBtn) return;
+
+  const eyeOff = document.getElementById("login-eye-off");
+  const eyeOn = document.getElementById("login-eye-on");
+
+  toggleBtn.addEventListener("click", () => {
+    const isVisible = passwordInput.type === "text";
+    passwordInput.type = isVisible ? "password" : "text";
+    if (eyeOff) eyeOff.classList.toggle("hidden", isVisible);
+    if (eyeOn) eyeOn.classList.toggle("hidden", !isVisible);
+    toggleBtn.setAttribute("aria-label", isVisible ? "Show password" : "Hide password");
+    toggleBtn.setAttribute("title", isVisible ? "Show password" : "Hide password");
+    // Keep focus on the toggle button so the user can flip back without re-typing
+    toggleBtn.focus();
+  });
+})();
+
 /** Email/password sign-in */
 document.getElementById("login-form").addEventListener("submit", async (event) => {
   event.preventDefault();
