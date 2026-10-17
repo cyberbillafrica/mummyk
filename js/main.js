@@ -360,18 +360,53 @@ function initCategoryFilters() {
   });
 }
 
+/** Link to a share-ready text payload (caption + store URL) */
+const shareStoreText = () =>
+  "Check out Mummy K Kiddies Empire — quality kids' clothes, shoes, bags and more. " + pageUrlForShare();
+
+/** Current store URL for sharing (used by the Share bar + FB/IG web shares) */
+function pageUrlForShare() {
+  // If this file lives at the site root, share the homepage; otherwise share the current page.
+  // Do not encode twice — encodeURIComponent is applied where the value is inserted.
+  return window.location.origin + window.location.pathname;
+}
+
 /** Wire the Share the Store buttons (WhatsApp, Facebook, Instagram) */
 function wireShareButtons() {
   const number = businessSettings.whatsappNumber || whatsappNumber;
-  const pageUrl = window.location.origin + window.location.pathname;
+  const pageUrl = pageUrlForShare();
 
-  // WhatsApp — share a short intro + the store URL
+  // WhatsApp — open the chat-picker (wa.me without a pre-filled text). The customer
+  // picks any contact from their list, then pastes / edits the shared store message.
   const shareWsBtn = document.getElementById("share-whatsapp-btn");
   if (shareWsBtn) {
     shareWsBtn.addEventListener("click", (e) => {
       e.preventDefault();
-      const text = "Check out Mummy K Kiddies Empire — quality kids' clothes, shoes, bags and more. " + pageUrl;
-      window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, "_blank");
+      // wa.me WITHOUT ?text opens the native WhatsApp contact picker / recent chats.
+      // On desktop this usually falls back to https://web.whatsapp.com.
+      window.open(`https://wa.me/${number}`, "_blank");
+
+      // Also copy the share-ready message to the clipboard so the customer can paste it
+      // into any WhatsApp chat after they pick the contact.
+      const shareText = shareStoreText();
+      const copyFallback = async () => {
+        try {
+          await navigator.clipboard.writeText(shareText);
+        } catch {
+          const textarea = document.createElement("textarea");
+          textarea.value = shareText;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "absolute";
+          textarea.style.left = "-9999px";
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            document.execCommand("copy");
+          } catch {}
+          document.body.removeChild(textarea);
+        }
+      };
+      copyFallback();
     });
   }
 
@@ -387,14 +422,39 @@ function wireShareButtons() {
     });
   }
 
-  // Instagram — copy a share caption + link to clipboard, then offer to open the app
+  // Instagram — copy a share caption + link to clipboard, then notify the customer
   const shareIgBtn = document.getElementById("share-instagram-btn");
   if (shareIgBtn) {
     shareIgBtn.addEventListener("click", (e) => {
       e.preventDefault();
-      const caption = "Shop Mummy K Kiddies Empire — kids' clothes, shoes, bags & more. " + pageUrl;
-      const bundled = `https://l.instagram.com/?url=${encodeURIComponent(pageUrl)}&caption=${encodeURIComponent(caption)}`;
-      window.open(bundled, "_blank");
+      const caption =
+        "Shop Mummy K Kiddies Empire — kids' clothes, shoes, bags & more. " + pageUrl;
+      const payload = caption + "\n";
+
+      const copyLink = async () => {
+        try {
+          await navigator.clipboard.writeText(payload);
+          showToast("Link copied — share it in Instagram!");
+        } catch {
+          // Fallback for older browsers / insecure origins
+          const textarea = document.createElement("textarea");
+          textarea.value = payload;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "absolute";
+          textarea.style.left = "-9999px";
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            document.execCommand("copy");
+            showToast("Link copied — share it in Instagram!");
+          } catch {
+            showToast("Copy failed — please copy the link and share it on Instagram.");
+          }
+          document.body.removeChild(textarea);
+        }
+      };
+
+      copyLink();
     });
   }
 }
