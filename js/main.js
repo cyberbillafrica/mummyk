@@ -332,11 +332,18 @@ async function fetchProducts() {
     renderProducts();
   } catch (error) {
     console.error("Failed to load products:", error);
-    loading.innerHTML = `
-      <p class="font-display text-xl font-bold text-ink/70">Could not load products</p>
-      <p class="mt-2 max-w-sm text-sm text-ink/50">
-        Please check the Firebase configuration in js/config.js and your internet connection, then refresh.
-      </p>`;
+    loading.classList.add("hidden");
+
+    // On a real failure, still render whatever is cached (possibly empty) so the
+    // page is usable and the Share bar can still appear once products do load.
+    allProducts = allProducts || [];
+    renderProducts();
+
+    const toast =
+      (error && (error.code === "permission-denied" || error.code === "unauthenticated"))
+        ? "We couldn’t load products right now — please come back shortly."
+        : "Could not load products. Check your internet and refresh.";
+    showToast(toast);
   }
 }
 
