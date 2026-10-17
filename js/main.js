@@ -386,7 +386,7 @@ function canonicalShareUrl() {
 /** Copy-safe share message: store intro + the actual page link */
 function shareMessageForWhatsApp() {
   const storeName =
-    document.querySelector('meta[name="og:title"])?.getAttribute("content") || document.title;
+    document.querySelector('meta[name="og:title"]')?.getAttribute("content") || document.title;
   const url = canonicalShareUrl();
   // Always include the link so the friend can open the store directly from the message.
   return `${storeName} — quality kids' clothes, shoes, bags and more.\n${url}`;
@@ -408,54 +408,6 @@ function wireShareButtons() {
       window.open(whatsappUrl, "_blank");
     });
   }
-
-  // Facebook — share the page URL (OG tags give title/description/image)
-  const shareFbBtn = document.getElementById("share-facebook-btn");
-  if (shareFbBtn) {
-    shareFbBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      window.open(
-        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
-        "_blank"
-      );
-    });
-  }
-
-  // Instagram — copy a share caption + link to clipboard, then notify the customer
-  const shareIgBtn = document.getElementById("share-instagram-btn");
-  if (shareIgBtn) {
-    shareIgBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      const caption =
-        "Shop Mummy K Kiddies Empire — kids' clothes, shoes, bags & more.\n" + url;
-
-      const copyLink = async () => {
-        try {
-          await navigator.clipboard.writeText(caption);
-          showToast("Link copied — share it in Instagram!");
-        } catch {
-          // Fallback for older browsers / insecure origins
-          const textarea = document.createElement("textarea");
-          textarea.value = caption;
-          textarea.setAttribute("readonly", "");
-          textarea.style.position = "absolute";
-          textarea.style.left = "-9999px";
-          document.body.appendChild(textarea);
-          textarea.select();
-          try {
-            document.execCommand("copy");
-            showToast("Link copied — share it in Instagram!");
-          } catch {
-            showToast("Copy failed — please copy the link and share it on Instagram.");
-          }
-          document.body.removeChild(textarea);
-        }
-      };
-
-      copyLink();
-    });
-  }
-}
 
   // Facebook — share the page URL (OG tags give title/description/image)
   const shareFbBtn = document.getElementById("share-facebook-btn");
