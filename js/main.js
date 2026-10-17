@@ -511,7 +511,8 @@ async function handleWhatsAppOrder() {
     `I would like to complete this order via WhatsApp. Thank you!`,
   ].join("\n");
 
-  window.open(`https://wa.me/${number}?text=${encodeURIComponent(message)}`, "_blank");
+  const waUrl = `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+  window.open(waUrl, "_blank");
   showToast("Opening WhatsApp…");
 }
 
