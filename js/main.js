@@ -376,11 +376,12 @@ function canonicalShareUrl() {
   }
 }
 
-/** Copy-safe message the customer can send to a friend */
+/** Copy-safe share message: store intro + the actual page link */
 function shareMessageForWhatsApp() {
   const storeName =
     document.querySelector('meta[name="og:title"])?.getAttribute("content") || document.title;
   const url = canonicalShareUrl();
+  // Always include the link so the friend can open the store directly from the message.
   return `${storeName} — quality kids' clothes, shoes, bags and more.\n${url}`;
 }
 
@@ -388,37 +389,16 @@ function shareMessageForWhatsApp() {
 function wireShareButtons() {
   const url = canonicalShareUrl();
 
-  // WhatsApp — "Share with a friend": pre-filled message with the store link, no business number.
-  // The customer still picks the contact inside WhatsApp before sending.
+  // WhatsApp — "Share with a friend": pre-filled message that INCLUDES the store link.
+  // No business phone number, so the customer picks the contact inside WhatsApp before sending.
   const shareWsBtn = document.getElementById("share-whatsapp-btn");
   if (shareWsBtn) {
-    shareWsBtn.addEventListener("click", async (e) => {
+    shareWsBtn.addEventListener("click", (e) => {
       e.preventDefault();
 
       const message = shareMessageForWhatsApp();
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-      const opened = window.open(whatsappUrl, "_blank");
-
-      if (!opened) {
-        // Fallback when a popup is blocked or WhatsApp is not installed:
-        // copy the same message so the customer can paste it into any chat.
-        try {
-          await navigator.clipboard.writeText(message);
-        } catch {
-          const textarea = document.createElement("textarea");
-          textarea.value = message;
-          textarea.setAttribute("readonly", "");
-          textarea.style.position = "absolute";
-          textarea.style.left = "-9999px";
-          document.body.appendChild(textarea);
-          textarea.select();
-          try {
-            document.execCommand("copy");
-          } catch {}
-          document.body.removeChild(textarea);
-        }
-        showToast("Link copied — paste it into WhatsApp to share with a friend.");
-      }
+      window.open(whatsappUrl, "_blank");
     });
   }
 
