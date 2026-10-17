@@ -197,6 +197,7 @@ function productFormTemplate(index) {
           <option value="Clothes">Clothes</option>
           <option value="Shoes">Shoes</option>
           <option value="Bags">Bags</option>
+          <option value="Back to School">Back to School</option>
           <option value="Others">Others</option>
         </select>
       </div>
