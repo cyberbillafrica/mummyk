@@ -235,10 +235,15 @@ function getVisibleProducts() {
 function renderProducts() {
   const grid = document.getElementById("product-grid");
   const empty = document.getElementById("product-empty");
+  const shareSection = document.getElementById("share-store-section");
 
   const filtered = getVisibleProducts();
 
   empty.classList.toggle("hidden", filtered.length > 0);
+  // Show the Share the Store bar once there are products on the page to share
+  if (shareSection) {
+    shareSection.classList.toggle("hidden", filtered.length === 0);
+  }
 
   grid.innerHTML = filtered
     .map((product) => {
@@ -353,6 +358,45 @@ function initCategoryFilters() {
       renderProducts();
     });
   });
+}
+
+/** Wire the Share the Store buttons (WhatsApp, Facebook, Instagram) */
+function wireShareButtons() {
+  const number = businessSettings.whatsappNumber || whatsappNumber;
+  const pageUrl = window.location.origin + window.location.pathname;
+
+  // WhatsApp — share a short intro + the store URL
+  const shareWsBtn = document.getElementById("share-whatsapp-btn");
+  if (shareWsBtn) {
+    shareWsBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const text = "Check out Mummy K Kiddies Empire — quality kids' clothes, shoes, bags and more. " + pageUrl;
+      window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, "_blank");
+    });
+  }
+
+  // Facebook — share the page URL (OG tags give title/description/image)
+  const shareFbBtn = document.getElementById("share-facebook-btn");
+  if (shareFbBtn) {
+    shareFbBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.open(
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`,
+        "_blank"
+      );
+    });
+  }
+
+  // Instagram — copy a share caption + link to clipboard, then offer to open the app
+  const shareIgBtn = document.getElementById("share-instagram-btn");
+  if (shareIgBtn) {
+    shareIgBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const caption = "Shop Mummy K Kiddies Empire — kids' clothes, shoes, bags & more. " + pageUrl;
+      const bundled = `https://l.instagram.com/?url=${encodeURIComponent(pageUrl)}&caption=${encodeURIComponent(caption)}`;
+      window.open(bundled, "_blank");
+    });
+  }
 }
 
 /** Search box + price sort dropdown */
@@ -769,6 +813,7 @@ function init() {
   // Load data + wire search, sorting and shoe booking
   initCategoryFilters();
   initSearchAndSort();
+  wireShareButtons();
   initBooking();
   renderCart();
   fetchProducts();
