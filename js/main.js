@@ -360,41 +360,53 @@ function initCategoryFilters() {
   });
 }
 
-/** Link to a share-ready text payload (caption + store URL) */
-const shareStoreText = () =>
-  "Check out Mummy K Kiddies Empire — quality kids' clothes, shoes, bags and more. " + pageUrlForShare();
+/** Build the canonical share URL from the page's <link rel="canonical"> when present,
+ * otherwise fall back to the current page. */
+function canonicalShareUrl() {
+  const canonical = document.querySelector('link[rel="canonical"]');
+  const href =
+    canonical && canonical.getAttribute("href"
+    ) ? canonical.getAttribute("href") : window.location.href;
 
-/** Current store URL for sharing (used by the Share bar + FB/IG web shares) */
-function pageUrlForShare() {
-  // If this file lives at the site root, share the homepage; otherwise share the current page.
-  // Do not encode twice — encodeURIComponent is applied where the value is inserted.
-  return window.location.origin + window.location.pathname;
+  // KeepQUERY-less URLs stable; resolve relatives against the page origin.
+  try {
+    return new URL(href, window.location.origin).href;
+  } catch {
+    return window.location.href;
+  }
+}
+
+/** Copy-safe message the customer can send to a friend */
+function shareMessageForWhatsApp() {
+  const storeName =
+    document.querySelector('meta[name="og:title"])?.getAttribute("content") || document.title;
+  const url = canonicalShareUrl();
+  return `${storeName} — quality kids' clothes, shoes, bags and more.\n${url}`;
 }
 
 /** Wire the Share the Store buttons (WhatsApp, Facebook, Instagram) */
 function wireShareButtons() {
-  const number = businessSettings.whatsappNumber || whatsappNumber;
-  const pageUrl = pageUrlForShare();
+  const url = canonicalShareUrl();
 
-  // WhatsApp — open the chat-picker (wa.me without a pre-filled text). The customer
-  // picks any contact from their list, then pastes / edits the shared store message.
+  // WhatsApp — "Share with a friend": pre-filled message with the store link, no business number.
+  // The customer still picks the contact inside WhatsApp before sending.
   const shareWsBtn = document.getElementById("share-whatsapp-btn");
   if (shareWsBtn) {
-    shareWsBtn.addEventListener("click", (e) => {
+    shareWsBtn.addEventListener("click", async (e) => {
       e.preventDefault();
-      // wa.me WITHOUT ?text opens the native WhatsApp contact picker / recent chats.
-      // On desktop this usually falls back to https://web.whatsapp.com.
-      window.open(`https://wa.me/${number}`, "_blank");
 
-      // Also copy the share-ready message to the clipboard so the customer can paste it
-      // into any WhatsApp chat after they pick the contact.
-      const shareText = shareStoreText();
-      const copyFallback = async () => {
+      const message = shareMessageForWhatsApp();
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      const opened = window.open(whatsappUrl, "_blank");
+
+      if (!opened) {
+        // Fallback when a popup is blocked or WhatsApp is not installed:
+        // copy the same message so the customer can paste it into any chat.
         try {
-          await navigator.clipboard.writeText(shareText);
+          await navigator.clipboard.writeText(message);
         } catch {
           const textarea = document.createElement("textarea");
-          textarea.value = shareText;
+          textarea.value = message;
           textarea.setAttribute("readonly", "");
           textarea.style.position = "absolute";
           textarea.style.left = "-9999px";
@@ -405,8 +417,8 @@ function wireShareButtons() {
           } catch {}
           document.body.removeChild(textarea);
         }
-      };
-      copyFallback();
+        showToast("Link copied — paste it into WhatsApp to share with a friend.");
+      }
     });
   }
 
@@ -416,7 +428,7 @@ function wireShareButtons() {
     shareFbBtn.addEventListener("click", (e) => {
       e.preventDefault();
       window.open(
-        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(pageUrl)}`,
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
         "_blank"
       );
     });
@@ -428,17 +440,64 @@ function wireShareButtons() {
     shareIgBtn.addEventListener("click", (e) => {
       e.preventDefault();
       const caption =
-        "Shop Mummy K Kiddies Empire — kids' clothes, shoes, bags & more. " + pageUrl;
-      const payload = caption + "\n";
+        "Shop Mummy K Kiddies Empire — kids' clothes, shoes, bags & more.\n" + url;
 
       const copyLink = async () => {
         try {
-          await navigator.clipboard.writeText(payload);
+          await navigator.clipboard.writeText(caption);
           showToast("Link copied — share it in Instagram!");
         } catch {
           // Fallback for older browsers / insecure origins
           const textarea = document.createElement("textarea");
-          textarea.value = payload;
+          textarea.value = caption;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "absolute";
+          textarea.style.left = "-9999px";
+          document.body.appendChild(textarea);
+          textarea.select();
+          try {
+            document.execCommand("copy");
+            showToast("Link copied — share it in Instagram!");
+          } catch {
+            showToast("Copy failed — please copy the link and share it on Instagram.");
+          }
+          document.body.removeChild(textarea);
+        }
+      };
+
+      copyLink();
+    });
+  }
+}
+
+  // Facebook — share the page URL (OG tags give title/description/image)
+  const shareFbBtn = document.getElementById("share-facebook-btn");
+  if (shareFbBtn) {
+    shareFbBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.open(
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+        "_blank"
+      );
+    });
+  }
+
+  // Instagram — copy a share caption + link to clipboard, then notify the customer
+  const shareIgBtn = document.getElementById("share-instagram-btn");
+  if (shareIgBtn) {
+    shareIgBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const caption =
+        "Shop Mummy K Kiddies Empire — kids' clothes, shoes, bags & more.\n" + url;
+
+      const copyLink = async () => {
+        try {
+          await navigator.clipboard.writeText(caption);
+          showToast("Link copied — share it in Instagram!");
+        } catch {
+          // Fallback for older browsers / insecure origins
+          const textarea = document.createElement("textarea");
+          textarea.value = caption;
           textarea.setAttribute("readonly", "");
           textarea.style.position = "absolute";
           textarea.style.left = "-9999px";
