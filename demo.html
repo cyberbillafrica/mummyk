@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Mummy K Kiddies Empire — Digital Storefront Presentation</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     MKE Presentation Deck
+     Brand Palette: Black (#111111), Gold (#D4AF37), Cream (#FDFBF7)
+     ============================================================ */
+
+  :root {
+    --mke-gold: #D4AF37;
+    --mke-gold-light: #F4E4B5;
+    --mke-gold-soft: #Fdfbf7;
+    --mke-black: #111111;
+    --mke-gray-900: #1a1a1a;
+    --mke-gray-800: #2a2a2a;
+    --mke-gray-700: #444444;
+    --mke-gray-500: #777777;
+    --mke-gray-300: #d1d1d1;
+    --mke-gray-100: #f4f4f4;
+    --mke-cream: #FDFBF7;
+    --radius: 14px;
+    --font-heading: "Playfair Display", serif;
+    --font-body: "Inter", sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: var(--font-body);
+    background: var(--mke-black);
+    color: var(--mke-gray-900);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Deck container ---------- */
+
+  .deck {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 56px 72px;
+    background: var(--mke-cream);
+    display: none;
+    flex-direction: column;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity .35s ease, transform .35s ease;
+    overflow-y: auto;
+  }
+
+  .slide.active {
+    display: flex;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Full-bleed slides (title, dividers) */
+  .slide.full-bleed {
+    background: linear-gradient(135deg, var(--mke-black) 0%, var(--mke-gray-900) 60%, var(--mke-gold) 150%);
+    color: #fff;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 72px 96px;
+  }
+
+  .slide.full-bleed .slide-title,
+  .slide.full-bleed h1,
+  .slide.full-bleed h2 { color: #fff; }
+
+  .slide.full-bleed .slide-kicker {
+    background: rgb(212 175 55 / 15%);
+    color: var(--mke-gold);
+    border: 1px solid rgb(212 175 55 / 35%);
+  }
+
+  .slide.accent-band {
+    background: linear-gradient(180deg, var(--mke-cream) 0%, var(--mke-cream) 75%, var(--mke-gold-light) 100%);
+  }
+
+  /* ---------- Header ---------- */
+
+  .slide-head {
+    margin-bottom: 28px;
+    flex-shrink: 0;
+  }
+
+  .slide-kicker {
+    display: inline-block;
+    font-size: .72rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--mke-black);
+    background: var(--mke-gold-light);
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+
+  .slide-title {
+    font-family: var(--font-heading);
+    font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+    font-weight: 800;
+    color: var(--mke-black);
+    line-height: 1.15;
+  }
+
+  .slide-subtitle {
+    font-size: 1.05rem;
+    color: var(--mke-gray-700);
+    margin-top: 8px;
+    max-width: 72ch;
+  }
+
+  .rule {
+    height: 3px;
+    width: 62px;
+    background: var(--mke-gold);
+    border-radius: 4px;
+    margin-top: 18px;
+  }
+
+  /* ---------- Body ---------- */
+
+  .slide-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 0;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 40px;
+    align-items: start;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .two-col.even { grid-template-columns: 1fr 1fr; }
+
+  /* ---------- Typography helpers ---------- */
+
+  ul.bullets {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  ul.bullets li {
+    position: relative;
+    padding-left: 26px;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    color: var(--mke-gray-700);
+  }
+
+  ul.bullets li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: .55em;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--mke-gold);
+  }
+
+  ul.bullets li strong { color: var(--mke-black); font-weight: 600; }
+
+  ul.checklist {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  ul.checklist li {
+    position: relative;
+    padding-left: 30px;
+    font-size: 1.02rem;
+    color: var(--mke-gray-700);
+    line-height: 1.45;
+  }
+
+  ul.checklist li::before {
+    content: "\F26E"; /* bi-check2-circle */
+    font-family: "bootstrap-icons";
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--mke-gold);
+    font-size: 1.1rem;
+  }
+
+  p.lede {
+    font-size: 1.15rem;
+    line-height: 1.55;
+    color: var(--mke-gray-700);
+    max-width: 78ch;
+  }
+
+  p.lede strong { color: var(--mke-black); }
+
+  /* ---------- Cards ---------- */
+
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+  }
+
+  .card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+
+  .card-item {
+    background: #fff;
+    border: 1px solid var(--mke-gray-300);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: 0 4px 6px rgb(0 0 0 / 3%);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card-item .ci-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: var(--mke-black);
+    color: var(--mke-gold);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 4px;
+  }
+
+  .card-item h4 {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--mke-black);
+  }
+
+  .card-item p {
+    font-size: .92rem;
+    color: var(--mke-gray-700);
+    line-height: 1.5;
+  }
+
+  /* ---------- Callout ---------- */
+
+  .callout {
+    background: var(--mke-gold-light);
+    border-left: 4px solid var(--mke-gold);
+    border-radius: 10px;
+    padding: 18px 24px;
+    font-size: 1rem;
+    color: var(--mke-gray-800);
+    line-height: 1.5;
+  }
+
+  .callout strong { color: var(--mke-black); }
+
+  /* ---------- Title slide bits ---------- */
+
+  .title-slide-inner { max-width: 900px; }
+
+  .title-slide-inner h1 {
+    font-family: var(--font-heading);
+    font-size: clamp(2.4rem, 5vw, 3.8rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 24px;
+  }
+
+  .title-slide-inner .tagline {
+    font-size: 1.25rem;
+    color: var(--mke-gray-300);
+    margin-bottom: 44px;
+    max-width: 60ch;
+    line-height: 1.5;
+  }
+
+  /* ---------- UI chrome ---------- */
+
+  .deck-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: rgb(255 255 255 / 10%);
+    z-index: 200;
+  }
+
+  .deck-progress {
+    height: 100%;
+    background: var(--mke-gold);
+    width: 0%;
+    transition: width .35s ease;
+  }
+
+  .deck-controls {
+    position: fixed;
+    bottom: 20px; right: 22px;
+    z-index: 150;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: rgb(17 17 17 / 90%);
+    border: 1px solid rgb(255 255 255 / 10%);
+    border-radius: 999px;
+    padding: 6px 12px;
+    backdrop-filter: blur(8px);
+    color: #fff;
+    font-size: .8rem;
+    box-shadow: 0 8px 24px rgb(0 0 0 / 40%);
+  }
+
+  .deck-controls button {
+    background: transparent;
+    border: none;
+    color: #fff;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+  }
+
+  .deck-controls button:hover { background: rgb(255 255 255 / 15%); }
+
+  .deck-counter {
+    font-family: monospace;
+    padding: 0 8px;
+    min-width: 62px;
+    text-align: center;
+    color: var(--mke-gold);
+  }
+
+  /* ---------- Speaker notes ---------- */
+
+  .notes {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    max-height: 40vh;
+    background: var(--mke-gray-900);
+    color: var(--mke-gray-300);
+    border-top: 3px solid var(--mke-gold);
+    padding: 20px 32px;
+    z-index: 190;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform .28s ease;
+    font-size: .95rem;
+    line-height: 1.6;
+  }
+
+  .notes.open { transform: translateY(0); }
+
+  .notes h5 {
+    color: var(--mke-gold);
+    font-size: .75rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .slide-footer {
+    position: absolute;
+    bottom: 18px; left: 72px; right: 72px;
+    display: flex;
+    justify-content: space-between;
+    font-size: .75rem;
+    color: var(--mke-gray-500);
+    font-family: monospace;
+  }
+
+  .slide.full-bleed .slide-footer { color: rgb(255 255 255 / 40%); }
+
+  /* Mobile */
+  @media (max-width: 900px) {
+    .slide { padding: 32px 24px 56px; }
+    .two-col, .card-grid.cols-2, .card-grid.cols-3 { grid-template-columns: 1fr !important; }
+    .slide-footer { left: 24px; right: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck-bar"><div class="deck-progress" id="progress"></div></div>
+
+<div class="deck" id="deck">
+
+  <!-- SLIDE 1 — Title -->
+  <section class="slide full-bleed">
+    <div class="title-slide-inner">
+      <span class="slide-kicker">Mummy K Kiddies Empire</span>
+      <h1>Your New Digital<br>Storefront &amp; Portal</h1>
+      <p class="tagline">
+        From scattered WhatsApp messages to a professional, automated shopping experience. 
+        Home of kids lovers.
+      </p>
+    </div>
+    <div class="slide-footer"><span>Mummy K Kiddies</span><span>01</span></div>
+    <aside class="notes-data" hidden>
+      Welcome! Today I'm going to show you the new digital platform we built for Mummy K Kiddies. It's designed to save you time, make you look more professional, and help you close more sales without the stress of the WhatsApp group.
+    </aside>
+  </section>
+
+  <!-- SLIDE 2 — The Problem -->
+  <section class="slide">
+    <header class="slide-head">
+      <span class="slide-kicker">The Challenge</span>
+      <h2 class="slide-title">The WhatsApp Group is costing you sales.</h2>
+      <p class="slide-subtitle">Right now, selling on WhatsApp is chaotic for both you and your customers.</p>
+      <div class="rule"></div>
+    </header>
+
+    <div class="slide-body">
+      <div class="two-col">
+        <div>
+          <ul class="bullets">
+            <li>Customers have to <strong>scroll through hundreds of messages</strong> to find a product.</li>
+            <li>Videos and images take forever to load, <strong>eating up their data</strong>.</li>
+            <li>They have to <strong>screenshot items</strong>, leave the chat, and send them to your DM just to ask for a price.</li>
+            <li>You get <strong>flooded with DMs</strong> asking the same questions, losing track of who wants what size.</li>
+            <li>When someone transfers money, you have to <strong>manually save the receipt</strong> and remember who paid.</li>
+          </ul>
+        </div>
+        <div class="card-item" style="justify-content:center; background: #fff5f5; border-color: #feb2b2;">
+          <div class="ci-icon" style="background:#e53e3e; color:#fff;"><i class="bi bi-exclamation-triangle"></i></div>
+          <h4 style="color:#c53030;">The Result</h4>
+          <p>Many customers never even open the videos or images. You lose the sale before they even ask a question because the process is too much work for them.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer"><span>Mummy K Kiddies</span><span>02</span></div>
+    <aside class="notes-data" hidden>
+      Highlight the "screenshot to DM" pain point. It's the biggest friction point. When people are on WhatsApp groups, they are bombarded. If they can't see the price immediately and add to a cart, they leave.
+    </aside>
+  </section>
+
+  <!-- SLIDE 3 — The Solution -->
+  <section class="slide accent-band">
+    <header class="slide-head">
+      <span class="slide-kicker">The Solution</span>
+      <h2 class="slide-title">One Link. A Full Store. Zero Stress.</h2>
+      <div class="rule"></div>
+    </header>
+    <div class="slide-body" style="justify-content:center;">
+      <div class="card-grid cols-3">
+        <div class="card-item">
+          <div class="ci-icon"><i class="bi bi-shop"></i></div>
+          <h4>The Storefront</h4>
+          <p>A beautiful, fast website where customers can browse Clothes, Shoes, Bags, and More. They can filter, view videos, select sizes, and add to cart—just like Jumia or Amazon.</p>
+        </div>
+        <div class="card-item">
+          <div class="ci-icon"><i class="bi bi-cart-check"></i></div>
+          <h4>Smart Checkout</h4>
+          <p>No more screenshotting. Customers fill their details once, and the system automatically calculates the total and sends you a perfectly formatted order.</p>
+        </div>
+        <div class="card-item">
+          <div class="ci-icon"><i class="bi bi-speedometer2"></i></div>
+          <h4>Admin Portal</h4>
+          <p>Your private dashboard. Upload products in bulk, confirm payments, manage complaints, and track orders—all from your phone or laptop.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer"><span>Mummy K Kiddies</span><span>03</span></div>
+    <aside class="notes-data" hidden>
+      This is the anchor slide. We built two things: the beautiful store for the customers, and the private cockpit for you to run the business. Everything else is detail.
+    </aside>
+  </section>
+
+  <!-- SLIDE 4 — Storefront Features -->
+  <section class="slide">
+    <header class="slide-head">
+      <span class="slide-kicker">Customer Experience</span>
+      <h2 class="slide-title">What your customers see</h2>
+      <p class="slide-subtitle">A premium shopping experience that builds trust instantly.</p>
+      <div class="rule"></div>
+    </header>
+    <div class="slide-body">
+      <div class="two-col">
+        <div>
+          <ul class="checklist">
+            <li><strong>Category Filters:</strong> Customers can instantly filter to see only "Shoes", "Bags", or "Clothes".</li>
+            <li><strong>Rich Media:</strong> Upload high-quality photos or short videos. For large videos, just paste a YouTube link!</li>
+            <li><strong>Size Selection:</strong> Customers pick the exact size they need before adding to cart, reducing wrong orders.</li>
+            <li><strong>Floating Support:</strong> A "Send us a Message" button lets them ask questions or file complaints without leaving the site.</li>
+            <li><strong>Cart System:</strong> They can add multiple items, change quantities, and see their total before checking out.</li>
+          </ul>
+        </div>
+        <div class="card-item" style="justify-content:center;">
+          <div class="ci-icon"><i class="bi bi-phone"></i></div>
+          <h4>Mobile-First Design</h4>
+          <p>Over 90% of your customers will browse on their phones. The store is designed to look and feel like a premium app.</p>
+          <p style="margin-top:10px; font-weight:600; color:var(--mke-black);">No more "How much is this?" messages. Prices are right there on the screen.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer"><span>Mummy K Kiddies</span><span>04</span></div>
+  </section>
+
+  <!-- SLIDE 5 — Checkout & Payments -->
+  <section class="slide accent-band">
+    <header class="slide-head">
+      <span class="slide-kicker">The Checkout</span>
+      <h2 class="slide-title">Two ways to pay. Both stress-free.</h2>
+      <p class="slide-subtitle">We kept the WhatsApp option you love, but added a professional Bank Transfer option.</p>
+      <div class="rule"></div>
+    </header>
+    <div class="slide-body">
+      <div class="card-grid cols-2" style="margin-top:10px;">
+        <div class="card-item">
+          <div class="ci-icon" style="background:#25D366; color:#fff;"><i class="bi bi-whatsapp"></i></div>
+          <h4>Option A: Order via WhatsApp</h4>
+          <p>Customer fills their address, clicks "Order via WhatsApp", and the website <strong>automatically opens a chat with you</strong>.</p>
+          <p style="margin-top:8px; font-size:0.85rem; color:var(--mke-gray-500);">The message is already perfectly formatted with their name, address, items, sizes, and total. No typing needed.</p>
+        </div>
+        <div class="card-item">
+          <div class="ci-icon" style="background:var(--mke-gold); color:#fff;"><i class="bi bi-bank"></i></div>
+          <h4>Option B: Bank Transfer + Proof</h4>
+          <p>Your bank details are shown on screen. The customer pays, then <strong>uploads their receipt directly to the website</strong>.</p>
+          <p style="margin-top:8px; font-size:0.85rem; color:var(--mke-gray-500);">The order is marked as "Proof Submitted" in your admin portal, waiting for your confirmation.</p>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:20px;">
+        <strong>Delivery Note:</strong> The checkout clearly states that delivery fees are negotiated separately. You keep full control over logistics.
+      </div>
+    </div>
+    <div class="slide-footer"><span>Mummy K Kiddies</span><span>05</span></div>
+    <aside class="notes-data" hidden>
+      Explain that the WhatsApp option is for the customers who still want to chat. But the Bank Transfer option is for the professional customers who just want to pay and get their goods. Both orders appear in the dashboard.
+    </aside>
+  </section>
+
+  <!-- SLIDE 6 — Admin Dashboard -->
+  <section class="slide">
+    <header class="slide-head">
+      <span class="slide-kicker">Your Command Center</span>
+      <h2 class="slide-title">The Admin Portal</h2>
+      <p class="slide-subtitle">Private, secure, and accessible from any browser. No software to install.</p>
+      <div class="rule"></div>
+    </header>
+    <div class="slide-body">
+      <div class="card-grid cols-2">
+        <div class="card-item">
+          <div class="ci-icon"><i class="bi bi-plus-square"></i></div>
+          <h4>Bulk Product Upload</h4>
+          <p>Don't open a new page for every item. Use "Add More Product" to upload multiple shoes, bags, and clothes at once.</p>
+        </div>
+        <div class="card-item">
+          <div class="ci-icon"><i class="bi bi-list-check"></i></div>
+          <h4>Order Management</h4>
+          <p>See every order. Click to view the payment receipt. Mark orders as "Confirmed" or "Delivered" with one click.</p>
+        </div>
+        <div class="card-item">
+          <div class="ci-icon"><i class="bi bi-chat-dots"></i></div>
+          <h4>Complaints Inbox</h4>
+          <p>Messages from the "Send us a Message" button land here. Reply to the customer and mark the issue as "Resolved".</p>
+        </div>
+        <div class="card-item">
+          <div class="ci-icon"><i class="bi bi-gear"></i></div>
+          <h4>Business Settings</h4>
+          <p>Update your Bank Account details, WhatsApp number, or the promo banner text on the fly. No developer needed.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer"><span>Mummy K Kiddies</span><span>06</span></div>
+  </section>
+
+  <!-- SLIDE 7 — How to Use (Step by Step) -->
+  <section class="slide full-bleed">
+    <div class="title-slide-inner" style="max-width:1000px; width:100%;">
+      <span class="slide-kicker">Your Daily Workflow</span>
+      <h2 style="font-family:var(--font-heading); font-size:2.2rem; margin-bottom:30px;">How to run your business in 3 steps</h2>
+      
+      <div class="card-grid cols-3" style="gap:20px;">
+        <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:24px; border-radius:14px;">
+          <div style="color:var(--mke-gold); font-size:2rem; font-weight:800; margin-bottom:10px;">01</div>
+          <h4 style="color:#fff; margin-bottom:10px;">Add Your Products</h4>
+          <p style="color:var(--mke-gray-300); font-size:0.9rem;">Log in to the Admin Portal. Go to "Add Products". Upload your images, set the price, choose the category (Shoes, Bags, etc.), and hit save.</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:24px; border-radius:14px;">
+          <div style="color:var(--mke-gold); font-size:2rem; font-weight:800; margin-bottom:10px;">02</div>
+          <h4 style="color:#fff; margin-bottom:10px;">Share the Link</h4>
+          <p style="color:var(--mke-gray-300); font-size:0.9rem;">Copy your new website link and post it in your WhatsApp groups, Instagram bio, or Facebook. Tell them: "Shop our full catalogue here!"</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:24px; border-radius:14px;">
+          <div style="color:var(--mke-gold); font-size:2rem; font-weight:800; margin-bottom:10px;">03</div>
+          <h4 style="color:#fff; margin-bottom:10px;">Confirm Orders</h4>
+          <p style="color:var(--mke-gray-300); font-size:0.9rem;">Check the portal daily. When a bank transfer comes in, view the receipt, confirm the money in your bank app, and click "Confirm Payment".</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer"><span>Mummy K Kiddies</span><span>07</span></div>
+    <aside class="notes-data" hidden>
+      Reassure him that the system is simple. If he can use WhatsApp, he can use this dashboard. Emphasize that he only needs to check it once or twice a day.
+    </aside>
+  </section>
+
+  <!-- SLIDE 8 — Security -->
+  <section class="slide">
+    <header class="slide-head">
+      <span class="slide-kicker">Security &amp; Trust</span>
+      <h2 class="slide-title">Built to protect your business</h2>
+      <div class="rule"></div>
+    </header>
+    <div class="slide-body">
+      <div class="two-col even">
+        <div>
+          <ul class="checklist">
+            <li><strong>Private Admin Portal:</strong> Only you can access the dashboard with your secret email and password.</li>
+            <li><strong>Secure Payments:</strong> Customers cannot mark their own orders as "Paid". You have the final say.</li>
+            <li><strong>Data Privacy:</strong> Customers cannot see other people's orders, phone numbers, or payment receipts.</li>
+            <li><strong>Anti-Fraud:</strong> Because you verify the bank alert manually before confirming, no one can fake a payment screenshot to get free goods.</li>
+          </ul>
+        </div>
+        <div class="card-item" style="justify-content:center; background: var(--mke-black); color: #fff;">
+          <div class="ci-icon" style="background:var(--mke-gold); color:#fff;"><i class="bi bi-shield-lock"></i></div>
+          <h4 style="color: var(--mke-gold);">The Golden Rule</h4>
+          <p style="color: var(--mke-gray-300);">Never mark an order as "Paid" just because you see a screenshot. Always open your actual bank app first to confirm the money has landed. The portal is a tool; you are the boss.</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-footer"><span>Mummy K Kiddies</span><span>08</span></div>
+  </section>
+
+  <!-- SLIDE 9 — Thank You -->
+  <section class="slide full-bleed">
+    <div class="title-slide-inner">
+      <span class="slide-kicker">Ready for Launch</span>
+      <h1 style="font-size:clamp(2.4rem, 5vw, 3.6rem);">Let's grow the Empire.</h1>
+      <p class="tagline">
+        You now have a professional storefront that works for you 24/7. 
+        No more messy WhatsApp groups. Just clean, organized sales.
+      </p>
+    </div>
+    <div class="slide-footer"><span>Mummy K Kiddies</span><span>09</span></div>
+    <aside class="notes-data" hidden>
+      Leave this slide up during questions. If he asks about hosting or domains, tell him we can get him a custom domain like mummykkiddies.com when he's ready.
+    </aside>
+  </section>
+
+</div>
+
+<div class="deck-controls" id="controls">
+  <button id="btnPrev"><i class="bi bi-chevron-left"></i></button>
+  <span class="deck-counter" id="counter">01 / 09</span>
+  <button id="btnNext"><i class="bi bi-chevron-right"></i></button>
+  <button id="btnNotes"><i class="bi bi-chat-square-text"></i></button>
+</div>
+
+<div class="notes" id="notes">
+  <h5>Speaker notes (Press 'N' to toggle)</h5>
+  <div id="notesBody"></div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  const deck = document.getElementById('deck');
+  const slides = Array.from(deck.querySelectorAll('.slide'));
+  const total = slides.length;
+  const counter = document.getElementById('counter');
+  const progress = document.getElementById('progress');
+  const notesPanel = document.getElementById('notes');
+  const notesBody = document.getElementById('notesBody');
+  let current = 0;
+
+  function show(index) {
+    if (index < 0) index = 0;
+    if (index >= total) index = total - 1;
+    slides.forEach((s, i) => s.classList.toggle('active', i === index));
+    current = index;
+    counter.textContent = String(current + 1).padStart(2, '0') + ' / ' + total;
+    progress.style.width = ((current + 1) / total * 100) + '%';
+    const data = slides[current].querySelector('.notes-data');
+    notesBody.innerHTML = data ? data.innerHTML.trim() : '<p>No notes for this slide.</p>';
+  }
+
+  function next() { if (current < total - 1) show(current + 1); }
+  function prev() { if (current > 0) show(current - 1); }
+
+  document.getElementById('btnNext').addEventListener('click', next);
+  document.getElementById('btnPrev').addEventListener('click', prev);
+  document.getElementById('btnNotes').addEventListener('click', () => notesPanel.classList.toggle('open'));
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prev(); }
+    if (e.key === 'n' || e.key === 'N') { e.preventDefault(); notesPanel.classList.toggle('open'); }
+  });
+
+  // Touch swipe
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].clientX; }, {passive: true});
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (dx < -60) next();
+    if (dx > 60) prev();
+  }, {passive: true});
+
+  show(0);
+})();
+</script>
+</body>
+</html>
